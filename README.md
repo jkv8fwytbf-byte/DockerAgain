@@ -137,6 +137,16 @@ hostname -I
 
 Students open `http://<that-ip>:8000` in any browser on the same network.
 
+**First time on the server, run the package check once.** The x86 image cannot
+be fully tested on the Mac (PyTorch and TensorFlow hang under CPU emulation), so
+this is the real proof that every library works:
+
+```bash
+docker compose exec jupyterhub python /srv/smoke_test.py
+```
+
+It should end with `All 18 checks passed`.
+
 Stop / start / see logs:
 
 ```bash
