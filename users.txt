@@ -1,0 +1,29 @@
+# Classroom accounts. One per line:   username:password
+#   - usernames: lowercase letters, digits, _ or -   (no spaces, max 32 chars)
+#   - lines starting with # are ignored
+#   - to add a student or reset a password: edit this file, then
+#         docker compose restart
+#   - the admin account (JUPYTERHUB_ADMIN_USERS in compose.yaml) must be listed here too
+#
+# CHANGE THESE PASSWORDS before using in a real class.
+teacher:change-me-teacher
+student01:changeme01
+student02:changeme02
+student03:changeme03
+student04:changeme04
+student05:changeme05
+student06:changeme06
+student07:changeme07
+student08:changeme08
+student09:changeme09
+student10:changeme10
+student11:changeme11
+student12:changeme12
+student13:changeme13
+student14:changeme14
+student15:changeme15
+student16:changeme16
+student17:changeme17
+student18:changeme18
+student19:changeme19
+student20:changeme20

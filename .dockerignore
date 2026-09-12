@@ -1,0 +1,9 @@
+# Never bake these into the image
+users.txt
+*.tar
+*.tar.gz
+data/
+.git/
+README.md
+Makefile
+compose.yaml

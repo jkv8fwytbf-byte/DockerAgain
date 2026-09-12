@@ -1,0 +1,29 @@
+# Python packages added on top of the scipy-notebook base image.
+# (torch/torchvision are installed separately in the Dockerfile from the CPU index.)
+#
+# Already in the base image, do NOT list here:
+#   numpy pandas scipy scikit-learn scikit-image matplotlib seaborn sympy
+#   statsmodels ipywidgets bokeh dask h5py numba openpyxl sqlalchemy jupyterlab
+
+# --- AI / ML (CPU only) ------------------------------------------------------
+tensorflow-cpu ; platform_machine == "x86_64"
+tensorflow     ; platform_machine == "aarch64"
+transformers
+xgboost
+
+# --- Computer vision ---------------------------------------------------------
+# "headless" = no desktop GUI bits, which is what you want inside a container
+opencv-python-headless
+
+# --- Radio / SDR -------------------------------------------------------------
+# [RADIO PLACEHOLDER] Confirmed need is still open. Starter set:
+pyrtlsdr==0.3.0     # read samples from RTL-SDR dongles. 0.4+ needs a librtlsdr fork we do not ship.
+# Candidates to add once the real list is known (uncomment / extend):
+# scikit-dsp-comm   # DSP + comms teaching toolkit
+# pyadi-iio         # Analog Devices PlutoSDR
+# gnuradio          # NOT pip-installable; use "mamba install gnuradio" in the Dockerfile
+
+# --- Teaching extras ---------------------------------------------------------
+plotly
+tqdm
+jupyterhub-idle-culler   # shuts down idle student servers to free RAM

@@ -1,0 +1,5 @@
+# PAM service used by JupyterHub to check a student's password.
+# Deliberately minimal: password check + account validity only, nothing
+# tty- or console-related (those modules misbehave inside containers).
+auth      required   pam_unix.so
+account   required   pam_unix.so

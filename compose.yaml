@@ -1,0 +1,37 @@
+# One command to run the classroom:   docker compose up -d
+#
+# Volumes (named, managed by Docker) keep data across restarts and image updates:
+#   homes    -> /home            every student's notebooks and files
+#   shared   -> /srv/shared      teacher drops files here; students see ~/shared (read-only)
+#   hubstate -> /srv/jupyterhub  JupyterHub's database and cookie secret
+#
+# "name" fixes the Compose project name, so the volumes are always called
+# classroom_homes, classroom_shared, classroom_hubstate whatever the folder is named.
+name: classroom
+
+services:
+  jupyterhub:
+    image: classroom-jupyterhub:${TAG:-dev}
+    build: .
+    container_name: classroom-jupyterhub
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      JUPYTERHUB_ADMIN_USERS: teacher   # must also appear in users.txt
+      IDLE_TIMEOUT_SECONDS: "7200"      # stop servers idle for 2 h; 0 = never
+      SHUTDOWN_ON_LOGOUT: "false"
+    volumes:
+      - ./users.txt:/etc/jupyterhub/users.txt:ro
+      - homes:/home
+      - shared:/srv/shared
+      - hubstate:/srv/jupyterhub
+    # To let notebooks talk to an RTL-SDR dongle plugged into the server
+    # (Linux only), uncomment:
+    # devices:
+    #   - /dev/bus/usb:/dev/bus/usb
+
+volumes:
+  homes:
+  shared:
+  hubstate:
