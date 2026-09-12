@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="cc-card cc-card--narrow cc-empty">
+  <i class="fa {% if error_status == 403 %}fa-user-lock{% elif error_status == 404 %}fa-compass{% else %}fa-triangle-exclamation{% endif %} cc-empty__icon" aria-hidden="true"></i>
+  <h2 class="cc-empty__title">{{ title }}</h2>
+  {% if error_text %}<p class="cc-empty__text">{{ error_text }}</p>{% endif %}
+  <div class="cc-empty__actions">
+    {% if retry_url %}<a class="btn btn-primary" href="{{ retry_url }}">{{ retry_label }}</a>{% endif %}
+    <a class="btn btn-outline-secondary" href="{{ prefix }}/">Back to the console</a>
+    <a class="btn btn-link" href="{{ hub_home_url }}">JupyterHub home</a>
+  </div>
+  <details class="cc-details"><summary>Details</summary><code>HTTP {{ error_status }}</code></details>
+</section>
+{% endblock %}

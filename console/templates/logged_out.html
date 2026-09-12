@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="cc-card cc-card--narrow cc-empty">
+  <i class="fa fa-door-open cc-empty__icon" aria-hidden="true"></i>
+  <h2 class="cc-empty__title">You're signed out of the console</h2>
+  <p class="cc-empty__text">Your JupyterHub session is still open. Sign out of JupyterHub too if you are leaving this computer.</p>
+  <div class="cc-empty__actions">
+    <a class="btn btn-primary" href="{{ prefix }}/">Sign in again</a>
+    <a class="btn btn-outline-secondary" href="{{ hub_logout_url }}">Sign out of JupyterHub</a>
+  </div>
+</section>
+{% endblock %}
