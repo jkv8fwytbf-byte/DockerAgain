@@ -60,13 +60,33 @@ RUN cp /tmp/sitecustomize.py "$(python -c 'import site; print(site.getsitepackag
  && rm /tmp/sitecustomize.py \
  && echo 'export PATH="/opt/conda/bin:$PATH"' > /etc/profile.d/conda-path.sh
 
-# --- 6. JupyterHub configuration and start-up script -------------------------
+# --- 6. Teacher console dependencies (own layer: cheap to rebuild) ------------
+COPY requirements-console.txt /tmp/requirements-console.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-console.txt \
+ && rm /tmp/requirements-console.txt \
+ && fix-permissions "${CONDA_DIR}"
+
+# --- 7. JupyterHub configuration, templates, branding defaults, start-up script --
+ARG VERSION=dev
+ENV CLASSROOM_IMAGE_VERSION=${VERSION}
 COPY jupyterhub_config.py /etc/jupyterhub/jupyterhub_config.py
 COPY pam-jupyterhub       /etc/pam.d/jupyterhub
+COPY hub-templates/       /etc/jupyterhub/templates/
+COPY branding/            /opt/classroom/branding-defaults/
 COPY entrypoint.sh        /usr/local/bin/entrypoint.sh
 COPY tests/smoke_test.py  /srv/smoke_test.py
-RUN chmod 755 /usr/local/bin/entrypoint.sh \
- && mkdir -p /srv/jupyterhub /srv/shared
+RUN echo "${VERSION}" > /etc/classroom-version \
+ && chmod 755 /usr/local/bin/entrypoint.sh \
+ && mkdir -p /srv/jupyterhub /srv/shared /opt/classroom \
+ && chmod -R u=rwX,go=rX /etc/jupyterhub/templates /opt/classroom \
+ && python -m py_compile /etc/jupyterhub/jupyterhub_config.py
+
+# --- 8. Console code and tests LAST (edits here rebuild in seconds) -------------
+COPY console/ /opt/classroom/console/
+COPY tests/   /opt/classroom/tests/
+RUN chmod -R u=rwX,go=rX /opt/classroom \
+ && python -m compileall -q /opt/classroom/console \
+ && PYTHONPATH=/opt/classroom python /opt/classroom/tests/check_config.py
 
 # JupyterHub listens here. Student notebooks, the shared folder and the Hub's
 # own state live on volumes (see compose.yaml) so they survive restarts.

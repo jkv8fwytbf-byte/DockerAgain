@@ -3,3 +3,6 @@ __pycache__/
 *.tar
 *.tar.gz
 data/
+* 2.*
+.venv/
+*.pyc

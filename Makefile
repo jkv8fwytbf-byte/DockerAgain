@@ -16,10 +16,10 @@ help:
 	@echo "make export        save the image to $(IMAGE)-$(TAG).tar.gz for offline use"
 
 build:
-	docker build -t $(IMAGE):$(TAG) .
+	docker build --build-arg VERSION=$(TAG) -t $(IMAGE):$(TAG) .
 
 build-server:
-	docker buildx build --platform $(PLATFORM) -t $(IMAGE):$(TAG) --load .
+	docker buildx build --platform $(PLATFORM) --build-arg VERSION=$(TAG) -t $(IMAGE):$(TAG) --load .
 
 up:
 	TAG=$(TAG) docker compose up -d

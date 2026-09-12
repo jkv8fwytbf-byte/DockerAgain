@@ -1,9 +1,13 @@
 # Never bake these into the image
-users.txt
+* 2.*
+*.pyc
 *.tar
 *.tar.gz
-data/
 .git/
-README.md
+.venv/
 Makefile
+README.md
+__pycache__/
 compose.yaml
+data/
+users.txt

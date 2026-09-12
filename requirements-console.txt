@@ -1,0 +1,8 @@
+# Teacher console dependencies. Kept in their own Docker layer so editing this
+# file never rebuilds the big AI/ML layer.
+fastapi>=0.115,<1
+uvicorn>=0.34,<1
+python-multipart>=0.0.20
+itsdangerous>=2.2
+segno>=1.6
+pytest>=8
