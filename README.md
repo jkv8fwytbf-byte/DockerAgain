@@ -103,7 +103,8 @@ make build-server TAG=1.0
 ```
 
 This is slower than the local build because the Mac emulates an x86 CPU while
-installing packages. Expect roughly an hour the first time.
+installing packages. The first run took about 17 minutes on this Mac; later runs
+reuse the cache.
 
 Save it to one file for the USB stick:
 
@@ -111,8 +112,9 @@ Save it to one file for the USB stick:
 make export TAG=1.0
 ```
 
-Copy these to the server: `classroom-jupyterhub-1.0.tar.gz`, `compose.yaml`,
-`users.txt`, and this `README.md`.
+The file is about 2.2 GB (the image is stored compressed). Copy these to the
+server: `classroom-jupyterhub-1.0.tar.gz`, `compose.yaml`, `users.txt`, and
+this `README.md`.
 
 ## 5. On the Linux server (teacher's steps)
 
@@ -190,6 +192,7 @@ block in `compose.yaml` and restart. Linux only.
 | `docker compose ps` says `(unhealthy)` | The Hub stopped answering on port 8000. Read `docker compose logs` for the error, then `docker compose restart`. |
 | Pressing Enter on the login form does nothing | Click the *Sign in* button. Some browsers need the click. |
 | Students lost their running notebooks after a restart | Expected: restarting the container stops every server. Files on disk are kept; students log in again. |
+| On the Mac, `docker image ls` shows the x86 image as only ~2 GB | Display quirk: Docker only counts layers unpacked for the Mac's own CPU. The exported tarball and the image on the Linux server have the full size. |
 | Server is slow with many students | Lower `IDLE_TIMEOUT_SECONDS`, set `SHUTDOWN_ON_LOGOUT: "true"`, or give the server more RAM. Each active student typically uses 0.5-2 GB. |
 
 ## 8. Known limits (deliberate, for simplicity)
