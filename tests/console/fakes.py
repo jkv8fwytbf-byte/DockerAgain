@@ -193,6 +193,28 @@ class FakeSystem:
         with open(path, encoding="utf-8") as fh:
             return fh.read()
 
+    def read_bytes(self, path):
+        with open(path, "rb") as fh:
+            return fh.read()
+
+    def remove_file(self, path):
+        try:
+            os.unlink(path)
+        except FileNotFoundError:
+            pass
+
+    def write_home_file(self, home, rel, data, uid, gid, mode=0o644, dir_mode=0o750):
+        # Use the real, fd-based implementation (it only calls os.*); just record ownership.
+        from console.system import System
+
+        written = System.write_home_file(self, home, rel, data, uid, gid, mode, dir_mode)
+        if written:
+            path = home
+            for part in rel.split("/"):
+                path = os.path.join(path, part)
+                self.owners[path] = uid
+        return written
+
     def write_text(self, path, text, mode=0o644):
         with open(path, "w", encoding="utf-8") as fh:
             fh.write(text)

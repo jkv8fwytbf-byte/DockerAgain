@@ -3,6 +3,8 @@
 *.pyc
 *.tar
 *.tar.gz
+.DS_Store
+._*
 .git/
 .venv/
 Makefile

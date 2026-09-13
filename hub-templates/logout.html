@@ -1,0 +1,23 @@
+{% extends "templates/logout.html" %}
+{#-
+  Classroom JupyterHub — "signed out" page.  (With PAM the Hub normally
+  redirects straight to the sign-in page; this page is shown when the
+  authenticator has auto_login enabled.)
+-#}
+
+{% block title -%}
+  Signed out · {{ branding.school_name or 'Classroom' }}
+{%- endblock title %}
+
+{% block main %}
+  <main id="logout-main" class="cc-status">
+    <div class="cc-status__icon"><i class="fa fa-door-open" aria-hidden="true"></i></div>
+    <h1 class="cc-status__title">You're signed out.</h1>
+    <p class="cc-status__text">See you next time.</p>
+    <div class="cc-status__actions">
+      <a class="btn btn-lg cc-btn-accent" href="{{ login_url }}">
+        <i class="fa fa-right-to-bracket" aria-hidden="true"></i> Sign in again
+      </a>
+    </div>
+  </main>
+{% endblock main %}

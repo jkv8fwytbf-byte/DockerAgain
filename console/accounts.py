@@ -66,6 +66,11 @@ class AccountSettings:
     def removed_dir(self) -> str:
         return os.path.join(self.state_dir, "removed")
 
+    @property
+    def kit_marker_dir(self) -> str:
+        """Root-only folder recording which kit version each home received."""
+        return os.path.join(self.state_dir, "kit")
+
 
 @dataclass
 class CreateOutcome:
@@ -205,45 +210,47 @@ class Accounts:
         gid = self.s.students_gid
         link = os.path.join(home, "shared")
         if self.sys.islink(link) or not self.sys.exists(link):
-            self.sys.symlink_replace(self.s.shared_dir, link)
+            try:
+                self.sys.symlink_replace(self.s.shared_dir, link)
+            except OSError:
+                log.warning("could not refresh shared link for %s; keeping the account", username)
         for sub in ("submit", "notebooks"):
             path = os.path.join(home, sub)
             if not self.sys.exists(path):
-                self.sys.mkdir(path, 0o750)
-                self.sys.lchown(path, uid, gid)
-        return self._backfill_kit(home, uid, gid)
+                try:
+                    self.sys.mkdir(path, 0o750)
+                    self.sys.lchown(path, uid, gid)
+                except OSError:
+                    log.warning("could not prepare %s for %s; continuing welcome kit", sub, username)
+        return self._backfill_kit(username, home, uid, gid)
 
-    def _backfill_kit(self, home: str, uid: int, gid: int) -> int:
-        """Copy welcome-kit files that are missing, once per kit version. Never overwrites."""
+    def _kit_marker(self, username: str) -> str:
+        return os.path.join(self.s.kit_marker_dir, username)
+
+    def _backfill_kit(self, username: str, home: str, uid: int, gid: int) -> int:
+        """
+        Copy welcome-kit files that are missing, once per kit version. Never
+        overwrites. The marker lives in the root-only state dir (not in the
+        student's home), and every write goes through System.write_home_file,
+        which never follows a link the student may have planted.
+        """
         if not self.sys.isdir(self.s.kit_dir):
             return 0
-        marker_dir = os.path.join(home, ".classroom")
-        marker = os.path.join(marker_dir, "kit-version")
+        marker = self._kit_marker(username)
         try:
             if int(self.sys.read_text(marker).strip()) >= self.s.kit_version:
                 return 0
         except (OSError, ValueError):
             pass
         added = 0
-        for rel in self.sys.walk_files(self.s.kit_dir):
-            if os.path.basename(rel).startswith(".") and not rel.startswith("."):
-                continue
-            src = os.path.join(self.s.kit_dir, rel)
-            dst = os.path.join(home, rel)
-            if self.sys.exists(dst):
-                continue
-            parent = os.path.dirname(dst)
-            if not self.sys.exists(parent):
-                self.sys.mkdir(parent, 0o750)
-                self.sys.lchown(parent, uid, gid)
-            self.sys.copy_file(src, dst)
-            self.sys.chmod(dst, 0o644)
-            self.sys.lchown(dst, uid, gid)
-            added += 1
-        if not self.sys.exists(marker_dir):
-            self.sys.mkdir(marker_dir, 0o755)
-            self.sys.lchown(marker_dir, uid, gid)
-        self.sys.write_text(marker, f"{self.s.kit_version}\n")
+        for rel in sorted(self.sys.walk_files(self.s.kit_dir)):
+            if any(part.startswith(".") for part in rel.split("/")):
+                continue  # dotfiles (shell rc files, .DS_Store) are never part of the kit
+            data = self.sys.read_bytes(os.path.join(self.s.kit_dir, rel))
+            if self.sys.write_home_file(home, rel, data, uid, gid):
+                added += 1
+        self.sys.mkdir(self.s.kit_marker_dir, 0o700)
+        self.sys.write_text(marker, f"{self.s.kit_version}\n", 0o600)
         return added
 
     def ensure_admin(self, username: str) -> None:
@@ -270,6 +277,7 @@ class Accounts:
                 raise AccountError(f"userdel failed: {(res.stderr or res.stdout).strip()}")
         archive_path = None
         home_removed = False
+        self.sys.remove_file(self._kit_marker(username))
         if self.sys.isdir(home):
             if archive:
                 self.sys.mkdir(self.s.removed_dir, 0o700)

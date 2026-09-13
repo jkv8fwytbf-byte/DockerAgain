@@ -67,6 +67,9 @@ RUN pip install --no-cache-dir -r /tmp/requirements-console.txt \
  && fix-permissions "${CONDA_DIR}"
 
 # --- 7. JupyterHub configuration, templates, branding defaults, start-up script --
+# Keep runtime settings after dependencies so changing them preserves the large library cache.
+# conda's prefix relocation corrupts SoapySDR's compiled-in module path.
+ENV SOAPY_SDR_PLUGIN_PATH=/opt/conda/lib/SoapySDR/modules0.8
 ARG VERSION=dev
 ENV CLASSROOM_IMAGE_VERSION=${VERSION}
 COPY jupyterhub_config.py /etc/jupyterhub/jupyterhub_config.py
@@ -75,10 +78,18 @@ COPY hub-templates/       /etc/jupyterhub/templates/
 COPY branding/            /opt/classroom/branding-defaults/
 COPY entrypoint.sh        /usr/local/bin/entrypoint.sh
 COPY tests/smoke_test.py  /srv/smoke_test.py
+# Student welcome kit: /etc/skel seeds every NEW home (useradd --create-home); /opt/classroom/skel
+# is the backfill source for homes that already exist (console.accounts). Then JupyterLab defaults.
+COPY skel/               /etc/skel/
+COPY skel/               /opt/classroom/skel/
+COPY lab/overrides.json  /opt/conda/share/jupyter/lab/settings/overrides.json
 RUN echo "${VERSION}" > /etc/classroom-version \
  && chmod 755 /usr/local/bin/entrypoint.sh \
  && mkdir -p /srv/jupyterhub /srv/shared /opt/classroom \
  && chmod -R u=rwX,go=rX /etc/jupyterhub/templates /opt/classroom \
+ && find /etc/skel /opt/classroom/skel \( -name .DS_Store -o -name '._*' \) -type f -delete \
+ && chmod -R u=rwX,go=rX /etc/skel /opt/classroom/skel \
+ && chmod 750 /etc/skel/submit /etc/skel/notebooks \
  && python -m py_compile /etc/jupyterhub/jupyterhub_config.py
 
 # --- 8. Console code and tests LAST (edits here rebuild in seconds) -------------

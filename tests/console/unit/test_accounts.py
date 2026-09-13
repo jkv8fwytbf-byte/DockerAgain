@@ -100,7 +100,9 @@ def test_kit_backfill_once_and_never_overwrites(accounts, fake, settings):
     assert open(os.path.join(home, "Welcome.ipynb")).read() == '{"cells": []}'
     assert open(os.path.join(home, "submit", "README.md")).read() == "my own readme"
     assert fake.owners[os.path.join(home, "Welcome.ipynb")] == 2001
-    assert open(os.path.join(home, ".classroom", "kit-version")).read().strip() == "1"
+    marker = os.path.join(settings.state_dir, "kit", "priya")      # root-only, outside the home
+    assert open(marker).read().strip() == "1"
+    assert not os.path.exists(os.path.join(home, ".classroom"))
 
     os.unlink(os.path.join(home, "Welcome.ipynb"))          # student deletes it
     assert accounts.ensure_home_extras("priya", 2001) == 0   # marker: not re-added
@@ -110,6 +112,45 @@ def test_kit_backfill_once_and_never_overwrites(accounts, fake, settings):
     assert accounts.ensure_home_extras("priya", 2001) == 1
     assert os.path.exists(os.path.join(home, "Welcome.ipynb"))
     assert open(os.path.join(home, "submit", "README.md")).read() == "my own readme"
+
+    accounts.remove("priya", archive=False)
+    assert not os.path.exists(marker)
+
+
+def test_kit_backfill_never_follows_student_links(accounts, fake, settings, tmp_path):
+    """A student who plants symlinks/FIFOs in their home must not be able to make root write elsewhere."""
+    victim = tmp_path / "victim"
+    victim.mkdir()
+    (victim / "README.md").write_text("root's file")
+    home = fake.make_home("mallory", 2002)
+    os.symlink(str(victim), os.path.join(home, "submit"))               # ~/submit -> /victim
+    os.symlink(str(victim / "README.md"), os.path.join(home, "Welcome.ipynb"))  # file link
+    os.mkfifo(os.path.join(home, "notebooks"))                           # a FIFO where a dir is expected
+    accounts.create("mallory", "pw")
+    assert (victim / "README.md").read_text() == "root's file"           # untouched
+    assert sorted(os.listdir(victim)) == ["README.md"]                   # nothing written there
+    assert os.path.islink(os.path.join(home, "Welcome.ipynb"))           # link left alone, not replaced
+    assert open(os.path.join(settings.state_dir, "kit", "mallory")).read().strip() == "1"
+
+
+def test_write_home_file_real_system_rules(tmp_path):
+    from console.system import System
+
+    sys_ = System()
+    home = tmp_path / "home"
+    home.mkdir()
+    uid, gid = os.getuid(), os.getgid()
+    assert sys_.write_home_file(str(home), "notebooks/README.md", b"hi", uid, gid)
+    assert (home / "notebooks" / "README.md").read_bytes() == b"hi"
+    assert not sys_.write_home_file(str(home), "notebooks/README.md", b"again", uid, gid)   # never overwrite
+    assert (home / "notebooks" / "README.md").read_bytes() == b"hi"
+    assert not sys_.write_home_file(str(home), "../escape.txt", b"x", uid, gid)
+    assert not sys_.write_home_file(str(home), "/etc/passwd", b"x", uid, gid)
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    os.symlink(str(elsewhere), str(home / "linked"))
+    assert not sys_.write_home_file(str(home), "linked/file.txt", b"x", uid, gid)
+    assert not (elsewhere / "file.txt").exists()
 
 
 def test_kit_missing_dir_is_noop(accounts, fake, settings):

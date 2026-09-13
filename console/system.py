@@ -8,6 +8,7 @@ from __future__ import annotations
 import grp
 import os
 import pwd
+import secrets
 import shutil
 import subprocess
 import time
@@ -132,11 +133,15 @@ class System:
 
     def symlink_replace(self, target: str, linkpath: str) -> None:
         """Atomically (re)point linkpath at target."""
-        tmp = f"{linkpath}.tmp-{os.getpid()}"
-        if os.path.lexists(tmp):
-            os.unlink(tmp)
+        tmp = f"{linkpath}.tmp-{secrets.token_hex(16)}"
         os.symlink(target, tmp)
-        os.replace(tmp, linkpath)
+        try:
+            os.replace(tmp, linkpath)
+        finally:
+            try:
+                os.unlink(tmp)
+            except FileNotFoundError:
+                pass
 
     def copy_file(self, src: str, dst: str) -> None:
         shutil.copyfile(src, dst)
@@ -144,6 +149,86 @@ class System:
     def read_text(self, path: str) -> str:
         with open(path, encoding="utf-8") as fh:
             return fh.read()
+
+    def read_bytes(self, path: str) -> bytes:
+        with open(path, "rb") as fh:
+            return fh.read()
+
+    def remove_file(self, path: str) -> None:
+        try:
+            os.unlink(path)
+        except FileNotFoundError:
+            pass
+
+    def write_home_file(self, home: str, rel: str, data: bytes, uid: int, gid: int,
+                        mode: int = 0o644, dir_mode: int = 0o750) -> bool:
+        """
+        Create `rel` inside a student's home as root WITHOUT ever following a
+        symlink and WITHOUT overwriting anything. Every directory component is
+        opened O_NOFOLLOW relative to its parent and must be a real directory
+        owned by the student (or by us); the file itself is created O_EXCL.
+        Returns True when the file was written, False when it already exists
+        or the path is not safe (a planted link, FIFO, foreign owner...).
+        """
+        import stat
+
+        rel = rel.replace("\\", "/")
+        if rel.startswith("/") or "\x00" in rel:
+            return False  # only relative paths inside the home
+        parts = [p for p in rel.split("/") if p not in ("", ".")]
+        if not parts or any(p == ".." for p in parts):
+            return False
+        cloexec = getattr(os, "O_CLOEXEC", 0)
+        dflags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | cloexec
+        allowed_owners = {uid, os.geteuid()}
+        fds: list[int] = []
+        try:
+            try:
+                fd = os.open(home, dflags)
+            except OSError:
+                return False
+            fds.append(fd)
+            if not stat.S_ISDIR(os.fstat(fd).st_mode):
+                return False
+            for comp in parts[:-1]:
+                try:
+                    child = os.open(comp, dflags, dir_fd=fd)
+                except FileNotFoundError:
+                    try:
+                        os.mkdir(comp, dir_mode, dir_fd=fd)
+                        child = os.open(comp, dflags, dir_fd=fd)
+                    except OSError:
+                        return False
+                    try:
+                        os.fchown(child, uid, gid)
+                    except PermissionError:
+                        pass  # not root (tests); ownership is best effort there
+                except OSError:  # ELOOP = symlink, ENOTDIR, EACCES ...
+                    return False
+                fds.append(child)
+                cst = os.fstat(child)
+                if not stat.S_ISDIR(cst.st_mode) or cst.st_uid not in allowed_owners:
+                    return False
+                fd = child
+            try:
+                ffd = os.open(parts[-1], os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | cloexec, mode, dir_fd=fd)
+            except OSError:  # exists (also a planted symlink/FIFO), or not permitted
+                return False
+            with os.fdopen(ffd, "wb") as fh:
+                fh.write(data)
+                fh.flush()
+                try:
+                    os.fchown(fh.fileno(), uid, gid)
+                except PermissionError:
+                    pass
+                os.fchmod(fh.fileno(), mode)
+            return True
+        finally:
+            for f in reversed(fds):
+                try:
+                    os.close(f)
+                except OSError:
+                    pass
 
     def write_text(self, path: str, text: str, mode: int = 0o644) -> None:
         tmp = f"{path}.tmp-{os.getpid()}"
