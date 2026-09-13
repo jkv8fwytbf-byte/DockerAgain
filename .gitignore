@@ -2,6 +2,7 @@
 __pycache__/
 *.tar
 *.tar.gz
+*.tar.gz.part
 data/
 * 2.*
 .venv/

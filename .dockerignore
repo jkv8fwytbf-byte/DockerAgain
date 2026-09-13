@@ -3,6 +3,7 @@
 *.pyc
 *.tar
 *.tar.gz
+*.tar.gz.part
 .DS_Store
 ._*
 .git/

@@ -3,7 +3,7 @@ IMAGE    ?= classroom-jupyterhub
 TAG      ?= dev
 PLATFORM ?= linux/amd64
 
-.PHONY: help build build-server up down restart logs test shell export
+.PHONY: help build build-server up down restart logs test shell export venv test-unit test-api check-config test-integration test-all console-logs
 
 help:
 	@echo "make build         build the image for THIS machine (fast, for local testing)"
@@ -12,8 +12,14 @@ help:
 	@echo "make logs          follow the container logs"
 	@echo "make shell         open a root shell inside the container"
 	@echo "make down          stop the Hub (data is kept in volumes)"
-	@echo "make build-server  build for the Linux x86_64 classroom server (TAG=1.0)"
+	@echo "make build-server  build for the Linux x86_64 classroom server (TAG=1.1)"
 	@echo "make export        save the image to $(IMAGE)-$(TAG).tar.gz for offline use"
+	@echo "make test-unit         console unit + API tests on this Mac (make venv first)"
+	@echo "make test-api          console tests inside the running container"
+	@echo "make check-config      validate jupyterhub_config.py + custom templates in the container"
+	@echo "make test-integration  end-to-end console check inside the container (login, add, remove)"
+	@echo "make test-all          check-config + test-api + test-integration + smoke test"
+	@echo "make console-logs      follow the teacher console log"
 
 build:
 	docker build --build-arg VERSION=$(TAG) -t $(IMAGE):$(TAG) .
@@ -40,5 +46,26 @@ shell:
 	docker compose exec jupyterhub bash
 
 export:
-	docker save $(IMAGE):$(TAG) | gzip > $(IMAGE)-$(TAG).tar.gz
+	bash -o pipefail -c 'docker save $(IMAGE):$(TAG) | gzip > $(IMAGE)-$(TAG).tar.gz.part'
+	mv $(IMAGE)-$(TAG).tar.gz.part $(IMAGE)-$(TAG).tar.gz
 	@ls -lh $(IMAGE)-$(TAG).tar.gz
+
+venv:
+	python3 -m venv .venv && .venv/bin/pip install -q -r requirements-console.txt httpx jinja2 psutil pillow nbformat
+
+test-unit:
+	.venv/bin/python -m pytest tests/console -q -p no:cacheprovider
+
+test-api:
+	docker compose exec -w /opt/classroom jupyterhub python -m pytest tests/console -q -p no:cacheprovider
+
+check-config:
+	docker compose exec -w /opt/classroom jupyterhub python tests/check_config.py
+
+test-integration:
+	docker compose exec -w /opt/classroom jupyterhub python tests/integration/console_check.py
+
+test-all: check-config test-api test-integration test
+
+console-logs:
+	docker compose exec jupyterhub tail -f /srv/jupyterhub/logs/console.log
