@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block head %}<link rel="stylesheet" href="{{ prefix }}/static/settings.css?v={{ asset_version }}">{% endblock %}
+
+{% block actions %}
+<a class="btn btn-sm btn-outline-secondary" href="{{ hub_home_url | replace('/hub/home', '/hub/login') }}" target="_blank" rel="noopener">
+  <i class="fa fa-arrow-up-right-from-square" aria-hidden="true"></i> Open the sign-in page
+</a>
+{% endblock %}
+
+{% block content %}
+<form id="settings" class="cc-settings" novalidate autocomplete="off"
+      data-logo-custom="{{ 'true' if branding.logo_custom else 'false' }}">
+  <div class="row g-4">
+    <div class="col-lg-7">
+
+      <section class="cc-card" aria-labelledby="h-school">
+        <div class="cc-card__header"><h2 id="h-school"><i class="fa fa-school cc-card__icon" aria-hidden="true"></i> School and class</h2></div>
+        <div class="mb-3">
+          <label class="form-label" for="school_name">School name</label>
+          <input class="form-control" id="school_name" name="school_name" type="text" maxlength="80"
+                 placeholder="e.g. Lincoln High School" value="{{ branding.school_name }}" autocomplete="organization">
+          <div class="invalid-feedback" data-error-for="school_name"></div>
+          <div class="form-text">Shown on the sign-in page and at the top of every page.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="class_name">Class name <span class="cc-muted fw-normal">(optional)</span></label>
+          <input class="form-control" id="class_name" name="class_name" type="text" maxlength="120"
+                 placeholder="e.g. Grade 10 · Python &amp; Radio Lab" value="{{ branding.class_name }}">
+          <div class="invalid-feedback" data-error-for="class_name"></div>
+          <div class="form-text">Appears under the school name on the sign-in page and on printed login cards.</div>
+        </div>
+        <div>
+          <div class="form-label" id="accent-label">Accent colour</div>
+          <div class="cc-accent-row">
+            <div class="cc-swatches" role="radiogroup" aria-labelledby="accent-label">
+              {#- the allow-list lives in console.util.ACCENTS (shared with branding.py via a template global) -#}
+              {% set swatches = accents if accents is defined else {"orange": "#f37524", "blue": "#2c7bb6", "green": "#1a8f4e", "purple": "#6f42c1", "teal": "#0d8a8a", "slate": "#495057"} %}
+              {% for name, hex in swatches.items() %}
+              <label class="cc-swatch" style="background: {{ hex }}" title="{{ name | capitalize }}">
+                <input type="radio" name="accent" value="{{ name }}" {% if branding.accent == name %}checked{% endif %}>
+                <span class="visually-hidden">{{ name | capitalize }}</span>
+              </label>
+              {% endfor %}
+            </div>
+            <span class="cc-accent-name cc-muted" id="accent-name" aria-live="polite">{{ branding.accent | capitalize }}</span>
+          </div>
+          <div class="invalid-feedback d-block" data-error-for="accent"></div>
+          <div class="form-text">Used for the sign-in button, the stripe on login cards and small highlights.</div>
+        </div>
+      </section>
+
+      <section class="cc-card" aria-labelledby="h-announcement">
+        <div class="cc-card__header"><h2 id="h-announcement"><i class="fa fa-bullhorn cc-card__icon" aria-hidden="true"></i> Announcement</h2></div>
+        <label class="form-label" for="announcement">Message on the sign-in page <span class="cc-muted fw-normal">(optional)</span></label>
+        <textarea class="form-control" id="announcement" name="announcement" rows="3" maxlength="300"
+                  placeholder="e.g. Homework 3 is due Friday." aria-describedby="announcement-count announcement-help">{{ branding.announcement }}</textarea>
+        <div class="invalid-feedback" data-error-for="announcement"></div>
+        <div class="cc-field-foot">
+          <div class="form-text" id="announcement-help">Shown on the sign-in page. Leave it empty to hide it.</div>
+          <span class="form-text cc-counter" id="announcement-count" aria-live="polite">0 / 300</span>
+        </div>
+      </section>
+
+      <section class="cc-card" aria-labelledby="h-address">
+        <div class="cc-card__header"><h2 id="h-address"><i class="fa fa-link cc-card__icon" aria-hidden="true"></i> Class address</h2></div>
+        <label class="form-label" for="class_url">Address students type into their browser</label>
+        <div class="cc-url-row">
+          <input class="form-control cc-mono" id="class_url" name="class_url" type="url" maxlength="200" inputmode="url"
+                 placeholder="http://192.168.1.10:8000" value="{{ branding.class_url }}" spellcheck="false" autocapitalize="off" autocorrect="off">
+          <button class="btn btn-outline-secondary text-nowrap" type="button" id="detect-url">
+            <i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i> Use this computer's address
+          </button>
+        </div>
+        <div class="invalid-feedback" data-error-for="class_url"></div>
+        <div class="form-text">
+          Printed on login cards and inside their QR code. Leave it empty to use the address you are using right now
+          (<span class="cc-mono" id="effective-url">…</span>).
+        </div>
+        <div class="form-text">
+          If it says <span class="cc-mono">localhost</span>, students on other computers won't be able to reach it — type this computer's network address instead
+          (on a Mac: System Settings &rarr; Network).
+        </div>
+      </section>
+
+      <section class="cc-card" aria-labelledby="h-logo">
+        <div class="cc-card__header"><h2 id="h-logo"><i class="fa fa-image cc-card__icon" aria-hidden="true"></i> Logo</h2></div>
+        <div class="cc-logo-drop" id="logo-drop" tabindex="0" role="button" aria-label="Upload a logo: press Enter to choose a file, or drop an image here">
+          <div class="cc-logo-chips">
+            <figure class="cc-logo-chip cc-logo-chip--light">
+              <img id="logo-light" src="{{ prefix }}/public/logo" alt="Current logo on a light background" width="160" height="56">
+              <figcaption>Light background</figcaption>
+            </figure>
+            <figure class="cc-logo-chip cc-logo-chip--dark">
+              <img id="logo-dark" src="{{ prefix }}/public/logo" alt="Current logo on a dark background" width="160" height="56">
+              <figcaption>Dark background</figcaption>
+            </figure>
+          </div>
+          <div class="cc-logo-drop__hint" aria-hidden="true"><i class="fa fa-arrow-down-to-bracket"></i> Drop an image to replace the logo</div>
+        </div>
+        <div class="cc-logo-actions">
+          <input type="file" id="logo-file" accept="image/png,image/jpeg,.png,.jpg,.jpeg" hidden>
+          <button class="btn btn-outline-primary" type="button" id="logo-upload">
+            <span class="spinner-border spinner-border-sm me-1" hidden aria-hidden="true"></span>
+            <i class="fa fa-upload" aria-hidden="true"></i> Upload logo
+          </button>
+          <button class="btn btn-link text-danger" type="button" id="logo-remove" {% if not branding.logo_custom %}hidden{% endif %}>Remove logo</button>
+          <span class="cc-muted cc-logo-state" id="logo-state">{% if branding.logo_custom %}Custom logo{% else %}Built-in logo{% endif %}</span>
+        </div>
+        <div class="form-text">PNG or JPEG, up to <span data-logo-limit>2 MB</span>. A transparent PNG at least 200 px tall looks best. The change is immediate — no save needed.</div>
+      </section>
+
+      <section class="cc-card" aria-labelledby="h-about">
+        <div class="cc-card__header">
+          <h2 id="h-about"><i class="fa fa-circle-info cc-card__icon" aria-hidden="true"></i> About this server</h2>
+          <button class="btn btn-sm btn-outline-secondary ms-auto cc-copy is-visible" type="button" id="copy-diagnostics" title="Copy these details to paste into an email or support request">
+            <i class="fa fa-copy" aria-hidden="true"></i> Copy diagnostics
+          </button>
+        </div>
+        <dl class="cc-about">
+          <dt>Classroom image</dt><dd data-about="image_version">v{{ image_version }}</dd>
+          <dt>JupyterHub</dt><dd data-about="jupyterhub">…</dd>
+          <dt>JupyterLab</dt><dd data-about="jupyterlab">…</dd>
+          <dt>Python</dt><dd data-about="python">…</dd>
+          <dt>Server address(es)</dt><dd data-about="addresses" class="cc-mono">…</dd>
+          <dt>Running since</dt><dd data-about="started">…</dd>
+        </dl>
+        <div class="form-text">The server addresses are what the container sees; the class address above is what students use.</div>
+      </section>
+    </div>
+
+    <div class="col-lg-5">
+      <aside class="cc-preview-wrap" aria-label="Live preview of the sign-in page">
+        <div class="cc-preview-bar">
+          <span class="cc-preview-bar__title"><i class="fa fa-eye" aria-hidden="true"></i> Live preview</span>
+          <div class="btn-group btn-group-sm" role="group" aria-label="Preview colour scheme">
+            <input type="radio" class="btn-check" name="preview-theme" id="pv-light" value="light" autocomplete="off" checked>
+            <label class="btn btn-outline-secondary" for="pv-light"><i class="fa fa-sun" aria-hidden="true"></i> Light</label>
+            <input type="radio" class="btn-check" name="preview-theme" id="pv-dark" value="dark" autocomplete="off">
+            <label class="btn btn-outline-secondary" for="pv-dark"><i class="fa fa-moon" aria-hidden="true"></i> Dark</label>
+          </div>
+        </div>
+        <div class="cc-preview" id="preview" data-bs-theme="light" style="--cc-accent: {{ branding.accent_hex }}">
+          <div class="cc-pv-login">
+            <div class="cc-pv-login__brand">
+              <img class="cc-pv-login__logo" id="pv-logo" src="{{ prefix }}/public/logo" alt="">
+              <div class="cc-pv-login__title" id="pv-school">{{ branding.school_name or 'Classroom JupyterHub' }}</div>
+              <div class="cc-pv-login__class" id="pv-class" {% if not branding.class_name %}hidden{% endif %}>{{ branding.class_name }}</div>
+            </div>
+            <div class="cc-pv-login__card">
+              <div class="cc-pv-login__announcement" id="pv-announcement" {% if not branding.announcement %}hidden{% endif %}>
+                <i class="fa fa-bullhorn" aria-hidden="true"></i><span id="pv-announcement-text">{{ branding.announcement }}</span>
+              </div>
+              <div class="cc-pv-login__label">Username</div>
+              <div class="cc-pv-login__input">student01</div>
+              <div class="cc-pv-login__label">Password</div>
+              <div class="cc-pv-login__input"><span class="cc-secret">••••••••</span><i class="fa fa-eye cc-pv-login__eye" aria-hidden="true"></i></div>
+              <div class="cc-pv-login__button">Sign in</div>
+              <div class="cc-pv-login__hint">Forgot your password? Ask your teacher.</div>
+            </div>
+          </div>
+          <div class="cc-pv-login__foot">Powered by JupyterHub · Classroom image v{{ image_version }}</div>
+        </div>
+        <p class="cc-preview__note cc-muted"><i class="fa fa-circle-info" aria-hidden="true"></i> This is how the sign-in page will look once you save. The logo changes as soon as you upload it.</p>
+      </aside>
+    </div>
+  </div>
+
+  <div class="cc-sticky-footer cc-settings-footer" id="settings-footer" hidden>
+    <span class="cc-settings-footer__text"><i class="fa fa-circle-dot" aria-hidden="true"></i> You have unsaved changes</span>
+    <button class="btn btn-outline-secondary" type="button" id="discard">Discard</button>
+    <button class="btn btn-primary" type="submit" id="save">
+      <span class="spinner-border spinner-border-sm me-1" hidden aria-hidden="true"></span>Save changes
+    </button>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}<script src="{{ prefix }}/static/settings.js?v={{ asset_version }}"></script>{% endblock %}

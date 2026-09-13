@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex">
+  <title>Login cards · {{ branding.school_name or 'Classroom' }}</title>
+  <link rel="icon" href="{{ hub_static }}/favicon.ico">
+  <link rel="stylesheet" href="{{ hub_static }}/css/style.min.css">
+  <link rel="stylesheet" href="{{ prefix }}/static/console.css?v={{ asset_version }}">
+  <style>
+    :root { --cc-accent: {{ branding.accent_hex }}; }
+    html, body { background: #fff; color: #111; margin: 0; font-family: var(--cc-font); }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    @page { size: auto; margin: 10mm; }
+
+    .cc-print-toolbar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+                        padding: .6rem 1rem; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+    .cc-print-count { font-weight: 600; }
+    .cc-print-hint { font-size: .8125rem; margin-left: auto; }
+    .cc-print-empty { max-width: 480px; margin: 48px auto; background: #fff; padding: 24px; border-radius: 12px; text-align: center; color: #495057; }
+
+    .cc-sheet { width: 190mm; display: grid; grid-template-columns: repeat(2, 92mm); grid-auto-rows: 61mm; gap: 4mm 6mm;
+                break-after: page; page-break-after: always; }
+    .cc-sheet.is-last { break-after: auto; page-break-after: auto; }
+    /* Card budget (61 mm tall): stripe 3 + body ≤ 48 + footer 5.5. Every line-height is explicit
+       so the Hub's Bootstrap default (1.5) cannot push the credential boxes into the footer. */
+    .cc-card-print { border: .3mm dashed #b8bec4; border-radius: 2.5mm; overflow: hidden; break-inside: avoid; page-break-inside: avoid;
+                     font-family: var(--cc-font); color: #111; background: #fff; display: flex; flex-direction: column; line-height: 1.2; }
+    .cc-card-print .stripe { height: 3mm; flex: none; background: var(--cc-accent); }
+    .cc-card-print .body { display: grid; grid-template-columns: minmax(0, 1fr) 30mm; gap: 3.5mm; padding: 3mm 4.5mm 1mm 5mm; flex: 1; min-height: 0; overflow: hidden; }
+    .cc-card-print .left { min-width: 0; display: flex; flex-direction: column; gap: 1.2mm; }
+    .cc-card-print .school { font-size: 7.5pt; text-transform: uppercase; letter-spacing: .05em; color: #6c757d; line-height: 1.2;
+                             display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; word-break: break-word; }
+    .cc-card-print .name { font-size: 12.5pt; font-weight: 600; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cc-card-print .label { display: block; font-size: 7.5pt; color: #6c757d; line-height: 1.2; }
+    .cc-card-print .url .value { display: block; font-family: var(--cc-mono); font-size: 9pt; word-break: break-all; line-height: 1.2;
+                                 max-height: 2.4em; overflow: hidden; }
+    .cc-card-print .box { display: block; width: fit-content; max-width: 100%; box-sizing: border-box; font-family: var(--cc-mono); font-size: 11pt; font-weight: 600;
+                          line-height: 1.2; border: 1px solid #cfd4da; border-radius: 2mm; padding: 1mm 2.5mm; margin-top: .4mm; color: #111; background: #fff;
+                          white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cc-card-print .right { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1mm; }
+    .cc-card-print .cc-qr { width: 30mm; height: 30mm; display: block; }
+    .cc-card-print .qr-cap { font-size: 7pt; color: #6c757d; text-align: center; line-height: 1.2; }
+    .cc-card-print .qr-missing { font-size: 6pt; word-break: break-all; text-align: center; line-height: 1.2; }
+    .cc-card-print .foot { font-size: 7pt; color: #6c757d; padding: 0 5mm 2.5mm; flex: none; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    @media screen {
+      body { background: #e5e7eb; }
+      .cc-sheets { padding: 8px 0 48px; }
+      .cc-sheet { background: #fff; padding: 10mm; margin: 16px auto; box-shadow: 0 8px 24px rgba(16,24,40,.16); box-sizing: content-box; }
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff; }
+      .cc-sheets { padding: 0; }
+      .cc-sheet { margin: 0; padding: 0; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="cc-print-toolbar no-print">
+  <a class="btn btn-outline-secondary btn-sm" href="{{ back_url }}"><i class="fa fa-arrow-left" aria-hidden="true"></i> Back to Students</a>
+  <span class="cc-print-count">{{ count }} card{% if count != 1 %}s{% endif %} · {{ pages }} page{% if pages != 1 %}s{% endif %}</span>
+  <span class="text-muted cc-print-hint">Fits A4 and Letter · choose “Save as PDF” in the print dialog to keep a copy</span>
+  <button class="btn btn-primary btn-sm" type="button" id="print" {% if not count %}disabled{% endif %}>
+    <i class="fa fa-print" aria-hidden="true"></i> Print
+  </button>
+</div>
+<main class="cc-sheets">
+{% if not cards %}
+  <section class="cc-print-empty">
+    <p class="mb-1"><strong>No cards to print.</strong></p>
+    <p class="mb-0">{% if selected %}The selected students are no longer in the class list.{% else %}Add students first, then come back here.{% endif %}</p>
+  </section>
+{% endif %}
+{% for sheet in sheets %}
+  <section class="cc-sheet{% if loop.last %} is-last{% endif %}" aria-label="Sheet {{ loop.index }} of {{ pages }}">
+    {% for card in sheet %}
+    <article class="cc-card-print">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="left">
+          <div class="school">{{ branding.school_name }}{% if branding.class_name %} · {{ branding.class_name }}{% endif %}</div>
+          <div class="name">{{ card.display_name }}</div>
+          <div class="url"><span class="label">Go to</span><span class="value">{{ class_url }}</span></div>
+          <div class="cred"><span class="label">Username</span><code class="box">{{ card.username }}</code></div>
+          <div class="cred"><span class="label">Password</span><code class="box">{{ card.password }}</code></div>
+        </div>
+        <div class="right">
+          {% if card.qr_svg %}{{ card.qr_svg|safe }}{% else %}<div class="qr-missing">{{ card.login_url }}</div>{% endif %}
+          <div class="qr-cap">Scan to open</div>
+        </div>
+      </div>
+      <div class="foot">Keep this card private. Forgot your password? Ask your teacher.</div>
+    </article>
+    {% endfor %}
+  </section>
+{% endfor %}
+</main>
+<script>
+  document.getElementById("print").addEventListener("click", function () { window.print(); });
+</script>
+</body>
+</html>

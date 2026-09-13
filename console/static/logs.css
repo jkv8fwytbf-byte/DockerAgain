@@ -1,0 +1,41 @@
+/* Logs page: the viewer, its floating "Jump to latest" pill and the empty state overlay. */
+.cc-logs__toolbar { row-gap: var(--cc-s2); }
+.cc-logs__toolbar .cc-search { flex: 1 1 200px; min-width: 160px; }
+.cc-logs__switch { margin-bottom: 0; display: flex; align-items: center; gap: .5rem; padding-left: 2.5em; white-space: nowrap; }
+.cc-logs__switch .form-check-input { margin-top: 0; }
+.cc-logs__note { margin-left: auto; font-size: .875rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* The error banner floats over the top of the viewer so the layout never jumps.
+   No Bootstrap d-flex here: its !important would beat the [hidden] attribute. */
+.cc-logs__alert { display: flex; align-items: center; gap: var(--cc-s3); position: absolute; top: var(--cc-s3); left: var(--cc-s3); right: var(--cc-s3); z-index: 3; margin: 0; box-shadow: var(--cc-shadow-pop); }
+
+.cc-logs__viewport { position: relative; }
+.cc-logs .cc-log { height: calc(100vh - 340px); min-height: 280px; overscroll-behavior: contain; }
+.cc-log__line { padding-top: 1px; padding-bottom: 1px; }
+.cc-log__line .src { color: var(--cc-muted); margin-right: .5rem; }
+/* DEBUG lines are most of the Hub log; the shared --cc-log-debug (50 % alpha) reads at ~3:1, --cc-muted at 6.6:1 light / 5.8:1 dark */
+.cc-log__line.is-debug { color: var(--cc-muted); }
+.cc-log__line.is-critical { color: var(--cc-log-error); border-left-color: var(--cc-log-error); font-weight: 600; }
+.cc-log__line.is-other .msg { color: var(--cc-muted); }
+.cc-log__line.is-new { animation: cc-flash 1.2s ease-out; }
+
+.cc-logs__jump { position: absolute; left: 50%; bottom: 1rem; transform: translateX(-50%); box-shadow: var(--cc-shadow-pop); z-index: 2; }
+.cc-logs__loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: .5rem; pointer-events: none; }
+.cc-logs__empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--cc-s5); pointer-events: none; }
+.cc-logs__empty .cc-empty__actions { pointer-events: auto; }
+.cc-logs__empty .cc-empty__icon { font-size: 2.25rem; }
+.cc-logs__empty .cc-empty__title { font-size: 1.125rem; }
+
+.cc-logs__footer { display: flex; gap: var(--cc-s4); flex-wrap: wrap; justify-content: space-between; }
+.cc-logs__footer .is-paused { color: var(--cc-log-warn); }
+.cc-logs__zone { flex-basis: 100%; }
+.cc-logs__files { min-width: 18rem; max-height: 60vh; overflow: auto; }
+.cc-logs__files .dropdown-item { display: flex; justify-content: space-between; gap: 1rem; font-variant-numeric: tabular-nums; }
+.cc-logs__files .dropdown-item small { color: var(--cc-muted); white-space: nowrap; }
+
+@media (max-width: 767.98px) {
+  .cc-logs .cc-log { height: calc(100vh - 380px); }
+  .cc-logs__note { margin-left: 0; width: 100%; }
+  .cc-logs__hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .cc-log__line.is-new { animation: none; } }

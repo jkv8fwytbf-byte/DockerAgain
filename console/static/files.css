@@ -1,0 +1,72 @@
+/* Handouts & Submissions page. Layered on console.css tokens. */
+.cc-files { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--cc-s5); align-items: start; }
+@media (min-width: 1100px) { .cc-files { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); } }
+.cc-files .cc-card { margin-bottom: 0; }
+.cc-card__heading { min-width: 0; }
+.cc-card__sub { margin: .15rem 0 0; color: var(--cc-muted); font-size: .875rem; }
+.cc-card__actions { margin-left: auto; display: flex; gap: var(--cc-s2); flex-wrap: wrap; align-items: center; }
+
+/* breadcrumbs */
+.cc-crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: .15rem; font-size: .875rem; margin-bottom: var(--cc-s3); min-height: 1.75rem; }
+.cc-crumbs__icon { color: var(--cc-accent); margin-right: .3rem; }
+.cc-crumbs__link { background: none; border: 0; padding: .1rem .35rem; color: var(--cc-primary); border-radius: var(--cc-r-control); font: inherit; cursor: pointer; }
+.cc-crumbs__link:hover { text-decoration: underline; background: var(--bs-secondary-bg); }
+.cc-crumbs__here { font-weight: 600; padding: .1rem .35rem; }
+.cc-crumbs__sep { color: var(--cc-muted); padding: 0 .1rem; }
+
+/* dropzone + options */
+.cc-dropzone__text { display: block; font-weight: 500; color: var(--cc-text); }
+.cc-dropzone__hint { display: block; font-size: .8125rem; margin-top: .25rem; }
+.cc-upload-options { display: flex; gap: var(--cc-s3); flex-wrap: wrap; margin: var(--cc-s3) 0 var(--cc-s4); font-size: .875rem; }
+.cc-upload-options .form-check-inline { margin-right: 0; }
+
+/* upload rows */
+.cc-uploads:not(:empty) { border-top: 1px solid var(--cc-border); margin-bottom: var(--cc-s4); }
+.cc-upload-row { border-bottom: 1px solid var(--cc-border); }
+.cc-upload-row__main { min-width: 0; display: grid; gap: .3rem; }
+.cc-upload-row__name { display: flex; gap: .5rem; align-items: center; min-width: 0; }
+.cc-upload-row__name .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.cc-upload-row .progress { height: 6px; }
+.cc-upload-row .progress-bar { background: var(--cc-meter-ok); transition: width .2s ease; }
+.cc-upload-row__msg { font-size: .8125rem; color: var(--cc-muted); }
+.cc-upload-row.is-done .cc-upload-row__msg { color: var(--cc-run-fg); }
+.cc-upload-row.is-done .cc-upload-row__msg::before { content: "✓ "; }
+.cc-upload-row.is-error .cc-upload-row__msg { color: var(--cc-fail-fg); }
+.cc-upload-row__actions { display: flex; gap: .25rem; white-space: nowrap; }
+
+/* tables: full-bleed inside the card (like the card header) so the narrow 5/12 submissions
+   card fits five columns at 1280 px without a horizontal scrollbar */
+.cc-files .cc-table-wrap { max-height: min(62vh, 680px); margin-left: calc(-1 * var(--cc-s5)); margin-right: calc(-1 * var(--cc-s5)); }
+.cc-files .cc-table td { vertical-align: middle; }
+.cc-files .cc-nowrap { white-space: nowrap; }
+.cc-files .cc-table th, .cc-files .cc-table td { padding: .45rem .4rem; }
+.cc-files .cc-table th:first-child, .cc-files .cc-table td:first-child { padding-left: var(--cc-s4); }
+.cc-files .cc-table th:last-child, .cc-files .cc-table td:last-child { padding-right: var(--cc-s4); }
+.cc-files .cc-table tbody tr.cc-row--muted td { color: var(--cc-muted); }
+.cc-file-cell { display: flex; align-items: center; gap: .15rem; min-width: 0; }   /* a div inside the td */
+.cc-file-icon { width: 1.5rem; text-align: center; color: var(--cc-muted); flex: 0 0 auto; }
+.cc-file-icon--dir { color: var(--cc-accent); }
+.cc-file-icon--file.fa-book { color: #f37726; }
+.cc-file-icon--file.fa-file-pdf { color: var(--cc-fail-dot); }
+.cc-file-icon--file.fa-table, .cc-file-icon--file.fa-file-excel { color: var(--cc-run-dot); }
+.cc-file-icon--file.fa-file-zipper { color: var(--cc-pend-dot); }
+.cc-file-icon--file.fa-file-code { color: var(--cc-meter-ok); }
+.cc-file-name { word-break: break-word; text-align: left; }
+.cc-file-name--dir { font-weight: 500; text-decoration: none; }
+.cc-file-name--dir:hover { text-decoration: underline; }
+.cc-student { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 .5rem; }
+.cc-student__name { font-weight: 500; }
+.cc-student__user { font-size: .8125rem; color: var(--cc-muted); font-family: var(--cc-mono); }
+.cc-files__note { font-size: .875rem; margin: 0 0 var(--cc-s3); }
+.cc-files__toolbar { margin-bottom: var(--cc-s3); }
+
+/* empty states inside cards are smaller than page-level ones */
+.cc-empty--compact { padding: var(--cc-s6) var(--cc-s4); }
+.cc-empty--compact .cc-empty__icon { font-size: 2.25rem; }
+.cc-empty--compact .cc-empty__title { font-size: 1.05rem; }
+
+@media (max-width: 575.98px) {
+  .cc-card__actions { margin-left: 0; width: 100%; }
+  .cc-files .cc-table-wrap { max-height: none; }
+}
+@media (prefers-reduced-motion: reduce) { .cc-upload-row .progress-bar { transition: none; } }

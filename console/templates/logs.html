@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block head %}<link rel="stylesheet" href="{{ prefix }}/static/logs.css?v={{ image_version }}">{% endblock %}
+
+{% block actions %}
+<div class="btn-group" role="group" aria-label="Download">
+  <a id="logs-download" class="btn btn-outline-secondary" href="{{ prefix }}/api/logs/download?source=hub">
+    <i class="fa fa-download" aria-hidden="true"></i> Download log
+  </a>
+  <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown"
+          aria-expanded="false" aria-label="Older log files" title="Older log files">
+    <span class="visually-hidden">Older log files</span>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end cc-logs__files" id="logs-files" aria-label="Log files">
+    <li><span class="dropdown-item-text cc-muted">Loading…</span></li>
+  </ul>
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="cc-card cc-logs" aria-labelledby="logs-heading">
+  <h2 id="logs-heading" class="visually-hidden">Log viewer</h2>
+
+  <div class="cc-toolbar cc-logs__toolbar" role="toolbar" aria-label="Log viewer controls">
+    <label class="visually-hidden" for="logs-source">Which log</label>
+    <select id="logs-source" class="form-select form-select-sm w-auto" title="Which log to show">
+      <option value="hub">JupyterHub log</option>
+      <option value="console">Teacher console log</option>
+    </select>
+
+    <label class="visually-hidden" for="logs-filter">Filter lines</label>
+    <input id="logs-filter" type="search" class="form-control form-control-sm cc-search" placeholder="Filter lines"
+           title="Show only lines containing this text (a student's name, a word from an error…)"
+           maxlength="200" autocomplete="off" spellcheck="false">
+
+    <label class="visually-hidden" for="logs-level">Show</label>
+    <select id="logs-level" class="form-select form-select-sm w-auto" title="Which levels to show">
+      <option value="all">All levels</option>
+      <option value="warn">Warnings and errors</option>
+      <option value="error">Errors only</option>
+    </select>
+
+    <div class="form-check form-switch cc-logs__switch">
+      <input class="form-check-input" type="checkbox" role="switch" id="logs-autoscroll" checked>
+      <label class="form-check-label" for="logs-autoscroll">Auto-scroll</label>
+    </div>
+
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="logs-clear" title="Empty the view; new lines keep arriving">
+      <i class="fa fa-eraser" aria-hidden="true"></i> Clear view
+    </button>
+
+    <span class="cc-muted cc-logs__note" id="logs-note">Last 2,000 lines</span>
+  </div>
+
+  <div class="cc-logs__viewport">
+    <div id="logs-alert" class="alert alert-warning cc-logs__alert" role="alert" hidden>
+      <i class="fa fa-triangle-exclamation" aria-hidden="true"></i>
+      <span class="flex-grow-1" id="logs-alert-text">Can't read the log file right now.</span>
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="logs-retry">Try again</button>
+    </div>
+
+    <div id="logs-view" class="cc-log" role="log" aria-live="off" tabindex="0" aria-label="Log lines, newest at the bottom"></div>
+
+    <div id="logs-loading" class="cc-logs__loading cc-muted">
+      <i class="fa fa-spinner fa-spin" aria-hidden="true"></i> Loading the log…
+    </div>
+
+    <div id="logs-empty" class="cc-empty cc-logs__empty" hidden>
+      <i class="fa fa-scroll cc-empty__icon" aria-hidden="true"></i>
+      <h3 class="cc-empty__title" id="logs-empty-title">No log lines yet</h3>
+      <p class="cc-empty__text" id="logs-empty-text">New lines will appear here as the server writes them.</p>
+      <div class="cc-empty__actions">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="logs-empty-clear" hidden>Clear filter</button>
+      </div>
+    </div>
+
+    <button type="button" id="logs-jump" class="btn btn-primary btn-sm rounded-pill cc-logs__jump" hidden>
+      Jump to latest <i class="fa fa-arrow-down" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <div class="cc-card__footer cc-logs__footer">
+    <span id="logs-status">Loading the log…</span>
+    <span class="cc-logs__hint">Tip: type a student's name in the filter to see only their lines.</span>
+    <span id="logs-zone" class="cc-logs__zone" hidden></span>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}<script src="{{ prefix }}/static/logs.js?v={{ image_version }}"></script>{% endblock %}

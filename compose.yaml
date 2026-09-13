@@ -21,6 +21,8 @@ services:
       JUPYTERHUB_ADMIN_USERS: teacher   # must also appear in users.txt
       IDLE_TIMEOUT_SECONDS: "7200"      # stop servers idle for 2 h; 0 = never
       SHUTDOWN_ON_LOGOUT: "false"
+      CONSOLE_ENABLED: "1"              # teacher console at /services/console/ (0 = off)
+      CLASSROOM_URL: ""                 # printed on login cards; empty = address the browser used
     volumes:
       - ./users.txt:/etc/jupyterhub/users.txt:ro
       - homes:/home

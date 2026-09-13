@@ -1,0 +1,58 @@
+{% extends "templates/not_running.html" %}
+{#-
+  Classroom JupyterHub — "your server is not running" page.
+
+  Variables from the Hub: server_name (""), spawn_url, failed (bool),
+  failed_message, failed_html_message, implicit_spawn_seconds.
+  The start link keeps id="start" and href="{{ spawn_url }}": the Hub's
+  not_running.js appends the URL hash to it, and the stock script block
+  (kept) redirects automatically when implicit_spawn_seconds is set.
+-#}
+
+{% block title -%}
+  {% if failed %}Couldn't start your JupyterLab{% else %}Start your JupyterLab{% endif %} · {{ branding.school_name or 'Classroom' }}
+{%- endblock title %}
+
+{% block heading %}
+  <div class="cc-status__icon cc-status__icon--page">
+    <i class="fa {% if failed %}fa-triangle-exclamation{% else %}fa-power-off{% endif %}" aria-hidden="true"></i>
+  </div>
+  <h1 class="cc-status__title">
+    {%- if failed -%}
+      Your JupyterLab couldn't start
+    {%- else -%}
+      Your JupyterLab isn't running right now
+    {%- endif -%}
+  </h1>
+{% endblock heading %}
+
+{% block message %}
+  {% if failed %}
+    <p class="cc-status__text">The last attempt to start it didn't work. Try again — if it keeps failing, tell your teacher.</p>
+  {% elif implicit_spawn_seconds %}
+    <p class="cc-status__text">It's starting automatically. If nothing happens in a few seconds, click below.</p>
+  {% else %}
+    <p class="cc-status__text">Click below to start it. Your files are exactly where you left them.</p>
+  {% endif %}
+{% endblock message %}
+
+{% block start_button %}
+  <a id="start"
+     role="button"
+     class="btn btn-lg cc-btn-accent"
+     href="{{ spawn_url }}">
+    <i class="fa {% if failed %}fa-rotate-right{% else %}fa-play{% endif %}" aria-hidden="true"></i>
+    {% if failed %}Try again{% else %}Start my JupyterLab{% endif %}{% if server_name %} ({{ server_name }}){% endif %}
+  </a>
+  {#- The spawner's own error text, collapsed under the button so the action stays first. -#}
+  {% if failed and (failed_html_message or failed_message) %}
+    <details class="cc-status__details">
+      <summary>Technical details</summary>
+      {% if failed_html_message %}
+        <div>{{ failed_html_message | safe }}</div>
+      {% else %}
+        <pre>{{ failed_message }}</pre>
+      {% endif %}
+    </details>
+  {% endif %}
+{% endblock start_button %}

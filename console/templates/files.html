@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block head %}<link rel="stylesheet" href="{{ prefix }}/static/files.css?v={{ asset_version }}">{% endblock %}
+{% block actions %}
+<a class="btn btn-outline-secondary" href="{{ lab_url }}/tree/shared" target="_blank" rel="noopener">
+  <i class="fa fa-arrow-up-right-from-square" aria-hidden="true"></i> Manage in JupyterLab
+</a>
+{% endblock %}
+{% block content %}
+<div class="cc-files">
+
+  <section class="cc-card cc-files__handouts" id="handouts-card" aria-labelledby="handouts-title">
+    <div class="cc-card__header">
+      <div class="cc-card__heading">
+        <h2 id="handouts-title">Handouts <span class="cc-count" id="handouts-count"></span></h2>
+        <p class="cc-card__sub">Students see these in their <code>shared</code> folder (read-only).</p>
+      </div>
+      <div class="cc-card__actions">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="handouts-newfolder">
+          <i class="fa fa-folder-plus" aria-hidden="true"></i> New folder
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" id="handouts-upload">
+          <i class="fa fa-cloud-arrow-up" aria-hidden="true"></i> Upload files
+        </button>
+      </div>
+    </div>
+
+    <nav class="cc-crumbs" id="handouts-crumbs" aria-label="Current folder"></nav>
+
+    <div class="cc-dropzone" id="handouts-drop" tabindex="0" role="button"
+         aria-label="Upload files: drop files here, or press Enter to choose files" aria-describedby="handouts-hint">
+      <i class="fa fa-cloud-arrow-up" aria-hidden="true"></i>
+      <span class="cc-dropzone__text">Drop files here, or click to choose</span>
+      <span class="cc-dropzone__hint" id="handouts-hint">Up to <span id="handouts-max">…</span> per file. Folders must be zipped first.</span>
+    </div>
+    <input type="file" id="handouts-input" class="visually-hidden" multiple tabindex="-1" aria-hidden="true">
+
+    <div class="cc-upload-options">
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="checkbox" id="opt-unzip" checked>
+        <label class="form-check-label" for="opt-unzip">Unpack <code>.zip</code> files into a folder</label>
+      </div>
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="checkbox" id="opt-overwrite">
+        <label class="form-check-label" for="opt-overwrite">Replace files that already exist</label>
+      </div>
+    </div>
+
+    <div id="handouts-uploads" class="cc-uploads" aria-live="polite" aria-label="Uploads in progress"></div>
+
+    <div class="alert alert-warning cc-inline-alert" id="handouts-error" role="alert" hidden></div>
+
+    <div class="cc-toolbar cc-files__toolbar" id="handouts-toolbar" hidden>
+      <label class="visually-hidden" for="handouts-search">Search handouts</label>
+      <input type="search" id="handouts-search" class="form-control form-control-sm cc-search"
+             placeholder="Search this folder…" autocomplete="off" data-search-for="handouts-table">
+    </div>
+    <div class="cc-table-wrap" id="handouts-wrap" hidden>
+      <table class="table table-hover cc-table" id="handouts-table" data-sort-key="name">
+        <thead>
+          <tr>
+            <th scope="col" data-sort="name"><button type="button" class="cc-sort">Name</button></th>
+            <th scope="col" class="num" data-sort="size"><button type="button" class="cc-sort">Size</button></th>
+            <th scope="col" data-sort="mtime"><button type="button" class="cc-sort">Modified</button></th>
+            <th scope="col" class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p class="cc-muted p-3 mb-0" data-empty-search hidden>No files match that search.</p>
+    </div>
+    <div class="cc-empty cc-empty--compact" id="handouts-empty" hidden>
+      <i class="fa fa-folder-open cc-empty__icon" aria-hidden="true"></i>
+      <h3 class="cc-empty__title" id="handouts-empty-title">No handouts yet</h3>
+      <p class="cc-empty__text" id="handouts-empty-text">Drop notebooks, datasets or PDFs here and every student sees them instantly.</p>
+    </div>
+  </section>
+
+  <section class="cc-card cc-files__submissions" id="submissions-card" aria-labelledby="submissions-title">
+    <div class="cc-card__header">
+      <div class="cc-card__heading">
+        <h2 id="submissions-title">Submissions <span class="cc-count" id="submissions-count"></span></h2>
+        <p class="cc-card__sub">Each student's <code>submit</code> folder.</p>
+      </div>
+      <div class="cc-card__actions">
+        <a class="btn btn-outline-primary btn-sm" id="submissions-all" href="{{ prefix }}/api/submissions/download-all" data-zip>
+          <i class="fa fa-file-zipper" aria-hidden="true"></i> Download all (zip)
+        </a>
+        <button type="button" class="btn btn-outline-secondary btn-sm cc-icon-btn" id="submissions-refresh"
+                aria-label="Refresh submissions" title="Refresh">
+          <i class="fa fa-rotate" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="alert alert-warning cc-inline-alert" id="submissions-error" role="alert" hidden></div>
+    <p class="cc-muted cc-files__note" id="submissions-note" hidden>
+      No submissions yet. Ask students to save work into the <code>submit</code> folder in their JupyterLab — the Welcome notebook explains it.
+    </p>
+
+    <div class="cc-table-wrap" id="submissions-wrap" hidden>
+      <table class="table table-hover cc-table" id="submissions-table">
+        <thead>
+          <tr>
+            <th scope="col" data-sort="student"><button type="button" class="cc-sort">Student</button></th>
+            <th scope="col" class="num" data-sort="files"><button type="button" class="cc-sort">Files</button></th>
+            <th scope="col" data-sort="mtime"><button type="button" class="cc-sort" title="When the student last changed a file">Modified</button></th>
+            <th scope="col" class="num" data-sort="size"><button type="button" class="cc-sort">Size</button></th>
+            <th scope="col" class="text-end"><span class="visually-hidden">Download</span></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="cc-empty cc-empty--compact" id="submissions-empty" hidden>
+      <i class="fa fa-inbox cc-empty__icon" aria-hidden="true"></i>
+      <h3 class="cc-empty__title">No students yet</h3>
+      <p class="cc-empty__text">Submissions appear here once students are on the roster and save work into their <code>submit</code> folder.</p>
+      <div class="cc-empty__actions"><a class="btn btn-outline-primary btn-sm" href="{{ prefix }}/students">Go to Students</a></div>
+    </div>
+    <div class="cc-card__footer" id="submissions-footer" hidden>
+      Checked <time id="submissions-updated"></time> · refreshes every minute
+    </div>
+  </section>
+
+</div>
+
+<div class="modal fade" id="newfolder-modal" tabindex="-1" aria-labelledby="newfolder-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="newfolder-form" novalidate>
+        <div class="modal-header">
+          <h2 class="modal-title fs-5" id="newfolder-title">New folder</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label" for="newfolder-name">Folder name</label>
+          <input class="form-control" id="newfolder-name" autocomplete="off" maxlength="120" required
+                 aria-describedby="newfolder-where newfolder-error">
+          <div class="form-text" id="newfolder-where">Inside Handouts</div>
+          <div class="invalid-feedback" id="newfolder-error"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="newfolder-ok">Create folder</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ prefix }}/static/files.js?v={{ asset_version }}"></script>{% endblock %}

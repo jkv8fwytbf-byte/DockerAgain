@@ -1,9 +1,16 @@
 # Never bake these into the image
-users.txt
+* 2.*
+*.pyc
 *.tar
 *.tar.gz
-data/
+*.tar.gz.part
+.DS_Store
+._*
 .git/
-README.md
+.venv/
 Makefile
+README.md
+__pycache__/
 compose.yaml
+data/
+users.txt

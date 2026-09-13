@@ -1,0 +1,41 @@
+{
+  "@jupyterlab/apputils-extension:notification": {
+    "fetchNews": "false",
+    "checkForUpdates": false
+  },
+  "@jupyterlab/extensionmanager-extension:plugin": {
+    "enabled": false
+  },
+  "@jupyterlab/docmanager-extension:plugin": {
+    "autosave": true,
+    "autosaveInterval": 30,
+    "confirmClosingDocument": true
+  },
+  "@jupyterlab/filebrowser-extension:browser": {
+    "showFileSizeColumn": true,
+    "showLastModifiedColumn": true,
+    "sortNotebooksFirst": true,
+    "showHiddenFiles": false,
+    "useFuzzyFilter": true
+  },
+  "@jupyterlab/notebook-extension:tracker": {
+    "codeCellConfig": {
+      "lineNumbers": true,
+      "lineWrap": true
+    }
+  },
+  "@jupyterlab/fileeditor-extension:plugin": {
+    "editorConfig": {
+      "lineNumbers": true,
+      "lineWrap": true
+    }
+  },
+  "@jupyterlab/apputils-extension:themes": {
+    "theme": "JupyterLab Light",
+    "adaptive-theme": false,
+    "theme-scrollbars": false
+  },
+  "@jupyterlab/terminal-extension:plugin": {
+    "fontSize": 14
+  }
+}
