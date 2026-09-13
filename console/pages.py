@@ -23,6 +23,9 @@ NAV = [
 ]
 
 router = APIRouter()
+_STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+ASSET_VERSION = str(max(os.stat(os.path.join(_STATIC_DIR, name)).st_mtime_ns
+                        for name in os.listdir(_STATIC_DIR) if name.endswith((".css", ".js"))))
 
 
 def page_context(request: Request, page: str, title: str, subtitle: str = "", user: str | None = None) -> dict:
@@ -42,11 +45,12 @@ def page_context(request: Request, page: str, title: str, subtitle: str = "", us
         "user": user or getattr(request.state, "user", None),
         "nav": [{"id": i, "href": settings.url(p), "label": l, "icon": ic, "active": i == page} for i, p, l, ic in NAV],
         "branding": branding,
-        "logo_url": f"{hub_base}/hub/logo?v={logo_version}",
+        "logo_url": f"{settings.prefix}/public/logo?v={logo_version}",
         "hub_static": f"{hub_base}/hub/static",
         "hub_home_url": f"{hub_base}/hub/home",
         "lab_url": f"{hub_base}/user/{user or getattr(request.state, 'user', '')}/lab",
         "image_version": settings.image_version,
+        "asset_version": ASSET_VERSION,
         "degraded": getattr(request.app.state, "degraded", None),
     }
 

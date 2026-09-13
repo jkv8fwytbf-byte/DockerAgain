@@ -227,7 +227,7 @@ def _announcement_login(user=None):
     text = _branding()["announcement"]
     if not text:
         return ""
-    return Markup("<br>").join(escape(str(text)).split("\n"))
+    return Markup("<br>").join(text.split("\n"))  # _branding already escaped it
 
 
 c.JupyterHub.template_vars = {
@@ -266,6 +266,7 @@ if os.environ.get("CONSOLE_ENABLED", "1") == "1":
             "name": "console-role",
             "description": "Teacher console: manage students and their servers",
             "scopes": [
+                "read:hub",                 # version displayed in Dashboard and Settings
                 "list:users",
                 "read:users",
                 "read:users:activity",

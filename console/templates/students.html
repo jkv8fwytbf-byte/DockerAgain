@@ -1,8 +1,275 @@
 {% extends "base.html" %}
-{% block content %}
-<section class="cc-card cc-empty">
-  <i class="fa fa-screwdriver-wrench cc-empty__icon" aria-hidden="true"></i>
-  <h2 class="cc-empty__title">Coming soon</h2>
-  <p class="cc-empty__text">Student management will appear here once the students feature is installed.</p>
-</section>
+{% block head %}<link rel="stylesheet" href="{{ prefix }}/static/students.css?v={{ asset_version }}">{% endblock %}
+
+{% block actions %}
+<a class="btn btn-outline-secondary" id="btn-print-all" href="{{ prefix }}/print/cards" target="_blank" rel="noopener">
+  <i class="fa fa-print" aria-hidden="true"></i> Print login cards</a>
+<button class="btn btn-outline-secondary" type="button" id="btn-bulk" data-open="bulk">
+  <i class="fa fa-file-import" aria-hidden="true"></i> Bulk add</button>
+<button class="btn btn-primary" type="button" id="btn-add" data-open="add">
+  <i class="fa fa-user-plus" aria-hidden="true"></i> Add student</button>
+<div class="dropdown">
+  <button class="btn btn-outline-secondary cc-icon-btn" type="button" id="btn-more" data-bs-toggle="dropdown" aria-expanded="false"
+          aria-label="More actions" title="More actions">
+    <i class="fa fa-ellipsis" aria-hidden="true"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btn-more">
+    <li><button class="dropdown-item" type="button" id="btn-import">
+      <i class="fa fa-file-lines fa-fw" aria-hidden="true"></i> Import users.txt…</button></li>
+    <li><button class="dropdown-item" type="button" id="btn-repair-menu">
+      <i class="fa fa-screwdriver-wrench fa-fw" aria-hidden="true"></i> Repair accounts</button></li>
+  </ul>
+</div>
 {% endblock %}
+
+{% block content %}
+<div id="hub-alert" class="alert alert-warning cc-inline-alert" role="alert" hidden>
+  <i class="fa fa-triangle-exclamation" aria-hidden="true"></i> <span id="hub-alert-text"></span>
+</div>
+<div id="repair-alert" class="alert alert-warning cc-inline-alert" role="alert" hidden>
+  <!-- the flex utility lives on an inner wrapper: Bootstrap's d-flex is !important and would defeat [hidden] -->
+  <div class="d-flex align-items-center gap-2 flex-wrap">
+    <i class="fa fa-screwdriver-wrench" aria-hidden="true"></i> <span id="repair-alert-text"></span>
+    <button class="btn btn-sm btn-outline-secondary ms-auto" type="button" id="btn-repair">Repair now</button>
+  </div>
+</div>
+
+<!-- shown while the roster holds no student accounts (teacher accounts alone still list below) -->
+<section class="cc-card cc-empty" id="students-empty" hidden>
+  <i class="fa fa-user-graduate cc-empty__icon" aria-hidden="true"></i>
+  <h2 class="cc-empty__title">No students yet</h2>
+  <p class="cc-empty__text">Add your first student, or paste the whole class register at once.</p>
+  <div class="cc-empty__actions">
+    <button class="btn btn-primary" type="button" data-open="add"><i class="fa fa-user-plus" aria-hidden="true"></i> Add student</button>
+    <button class="btn btn-outline-secondary" type="button" data-open="bulk"><i class="fa fa-file-import" aria-hidden="true"></i> Bulk add</button>
+  </div>
+  <p class="cc-muted small mt-3 mb-0">Tip: paste your class register into Bulk add — one name per line.</p>
+</section>
+
+<section class="cc-card" id="students-card" hidden>
+  <div class="cc-toolbar">
+    <label class="visually-hidden" for="students-search">Search students</label>
+    <input id="students-search" class="form-control cc-search" type="search" placeholder="Search by name or username"
+           data-search-for="students-table" autocomplete="off">
+    <div class="form-check form-switch mb-0">
+      <input class="form-check-input" type="checkbox" role="switch" id="show-passwords">
+      <label class="form-check-label" for="show-passwords">Show passwords</label>
+    </div>
+    <div class="cc-selection ms-auto" id="selection" hidden>
+      <span id="selection-count" aria-live="polite">0 selected</span>
+      <button class="btn btn-sm btn-outline-secondary" type="button" id="btn-print-selected">
+        <i class="fa fa-print" aria-hidden="true"></i> Print cards for selected</button>
+      <button class="btn btn-sm btn-link" type="button" id="btn-clear-selection">Clear</button>
+    </div>
+  </div>
+  <div class="cc-table-wrap">
+    <table class="table table-hover cc-table" id="students-table" data-sort-key="name">
+      <thead>
+        <tr>
+          <th scope="col" class="cc-col-check"><input class="form-check-input" type="checkbox" id="select-all" aria-label="Select all students"></th>
+          <th scope="col" data-sort="name"><button type="button" class="cc-sort">Name</button></th>
+          <th scope="col" data-sort="username"><button type="button" class="cc-sort">Username</button></th>
+          <th scope="col">Password</th>
+          <th scope="col" data-sort="state"><button type="button" class="cc-sort">Status</button></th>
+          <th scope="col" class="text-end"><span class="visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody id="students-body"></tbody>
+    </table>
+    <div data-empty-search class="cc-empty-search" hidden>No students match “<span id="search-term"></span>”.</div>
+  </div>
+  <div class="cc-card__footer" id="students-footer"></div>
+</section>
+
+<section class="cc-card" id="students-loading">
+  <p class="cc-muted mb-0"><i class="fa fa-spinner fa-spin" aria-hidden="true"></i> Loading the class list…</p>
+</section>
+
+<!-- Add student -->
+<div class="modal fade" id="modal-add" tabindex="-1" aria-labelledby="modal-add-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="form-add" novalidate>
+        <div class="modal-header">
+          <h2 class="modal-title fs-5" id="modal-add-title">Add student</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label" for="add-name">Display name</label>
+            <input class="form-control" id="add-name" name="display_name" placeholder="e.g. Priya Sharma" maxlength="64" autocomplete="off" required>
+            <div class="form-text">Shown on login cards and in this console.</div>
+            <div class="cc-field-error" id="add-name-error" hidden></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="add-username">Username</label>
+            <input class="form-control cc-mono" id="add-username" name="username" maxlength="32" autocomplete="off"
+                   autocapitalize="none" spellcheck="false" aria-describedby="add-username-help add-username-status">
+            <div class="form-text" id="add-username-help">Lowercase letters, numbers, - and _ only.
+              <a href="#" id="add-use-suggestion" hidden>Use suggestion</a></div>
+            <div class="cc-field-status" id="add-username-status" aria-live="polite"></div>
+            <div class="cc-field-error" id="add-username-error" hidden></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="add-password">Password</label>
+            <div class="input-group cc-password" id="add-password-field">
+              <input class="form-control cc-mono" id="add-password" name="password" type="text" maxlength="72" autocomplete="new-password" spellcheck="false">
+              <button class="btn btn-outline-secondary" type="button" data-eye aria-label="Show or hide the password" aria-pressed="true" title="Show or hide">
+                <i class="fa fa-eye" aria-hidden="true"></i></button>
+              <button class="btn btn-outline-secondary" type="button" data-regenerate title="Generate a new password">
+                <i class="fa fa-rotate" aria-hidden="true"></i> Regenerate</button>
+              <button class="btn btn-outline-secondary" type="button" data-copy-password aria-label="Copy password" title="Copy password">
+                <i class="fa fa-copy" aria-hidden="true"></i></button>
+            </div>
+            <div class="form-text">Passwords are kept in plain text on this server so you can print login cards. Use ones you don't use anywhere else.</div>
+            <div class="cc-field-error" id="add-password-error" hidden></div>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="add-another">
+            <label class="form-check-label" for="add-another">Add another after saving</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="add-submit"><i class="fa fa-user-plus" aria-hidden="true"></i> Add student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk add -->
+<div class="modal fade" id="modal-bulk" tabindex="-1" aria-labelledby="modal-bulk-title" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5" id="modal-bulk-title">Bulk add students</h2>
+        <ol class="cc-steps" aria-label="Steps">
+          <li data-step="1" class="is-active"><span class="cc-steps__n">1</span> Paste</li>
+          <li data-step="2"><span class="cc-steps__n">2</span> Check</li>
+          <li data-step="3"><span class="cc-steps__n">3</span> Done</li>
+        </ol>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div data-bulk-step="1">
+          <label class="form-label" for="bulk-text">One student per line</label>
+          <textarea class="form-control cc-mono" id="bulk-text" rows="8" spellcheck="false"
+                    placeholder="Priya Sharma&#10;Liam Chen, liam&#10;Ana Silva, ana, sunny-day-7"></textarea>
+          <div class="form-text">One student per line: Name, then optionally a username and a password. We generate anything you leave out.</div>
+          <div class="cc-or"><span>or</span></div>
+          <label class="form-label" for="bulk-file">Choose a CSV or text file</label>
+          <input class="form-control" type="file" id="bulk-file" accept=".csv,.txt,text/csv,text/plain">
+          <div class="form-text">Columns: name, username, password. A header row is fine. Up to 1 MB.</div>
+          <div class="cc-field-error mt-2" id="bulk-error" hidden></div>
+        </div>
+        <div data-bulk-step="2" hidden>
+          <div class="cc-chips" id="bulk-summary" aria-live="polite"></div>
+          <div class="cc-table-wrap cc-table-wrap--modal">
+            <table class="table cc-table" id="bulk-preview">
+              <thead><tr><th scope="col">Name</th><th scope="col">Username</th><th scope="col">Password</th><th scope="col">Result</th>
+                <th scope="col"><span class="visually-hidden">Remove line</span></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <fieldset class="mt-3" id="bulk-conflict" hidden>
+            <legend class="fs-6 mb-1">Students who already exist</legend>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="on_conflict" id="bulk-skip" value="skip" checked>
+              <label class="form-check-label" for="bulk-skip">Leave them as they are (recommended)</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="on_conflict" id="bulk-reset" value="reset_password">
+              <label class="form-check-label" for="bulk-reset">Reset their passwords to the ones shown above</label>
+            </div>
+          </fieldset>
+        </div>
+        <div data-bulk-step="3" class="text-center py-3" hidden>
+          <i class="fa fa-circle-check cc-done-icon" aria-hidden="true"></i>
+          <h3 class="fs-5 mt-3" id="bulk-done-title"></h3>
+          <p class="cc-muted" id="bulk-done-text"></p>
+          <ul class="text-start small cc-muted" id="bulk-done-errors" hidden></ul>
+          <a class="btn btn-primary" id="bulk-print" href="#" target="_blank" rel="noopener" hidden>
+            <i class="fa fa-print" aria-hidden="true"></i> <span id="bulk-print-label">Print login cards</span></a>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary me-auto" id="bulk-back" hidden><i class="fa fa-arrow-left" aria-hidden="true"></i> Back</button>
+        <button type="button" class="btn btn-outline-secondary" id="bulk-close" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-outline-secondary" id="bulk-recheck" hidden><i class="fa fa-rotate" aria-hidden="true"></i> Check again</button>
+        <button type="button" class="btn btn-primary" id="bulk-next" data-submit>Check list</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reset password -->
+<div class="modal fade" id="modal-reset" tabindex="-1" aria-labelledby="modal-reset-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="form-reset" novalidate>
+        <div class="modal-header">
+          <h2 class="modal-title fs-5" id="modal-reset-title">New password</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label" for="reset-password">New password</label>
+          <div class="input-group cc-password" id="reset-password-field">
+            <input class="form-control cc-mono" id="reset-password" type="text" maxlength="72" autocomplete="new-password" spellcheck="false">
+            <button class="btn btn-outline-secondary" type="button" data-eye aria-label="Show or hide the password" aria-pressed="true" title="Show or hide">
+              <i class="fa fa-eye" aria-hidden="true"></i></button>
+            <button class="btn btn-outline-secondary" type="button" data-regenerate title="Generate a new password">
+              <i class="fa fa-rotate" aria-hidden="true"></i> Regenerate</button>
+            <button class="btn btn-outline-secondary" type="button" data-copy-password aria-label="Copy password" title="Copy password">
+              <i class="fa fa-copy" aria-hidden="true"></i></button>
+          </div>
+          <div class="cc-field-error" id="reset-password-error" hidden></div>
+          <p class="form-text mt-2 mb-0" id="reset-note">Takes effect immediately. If the student is signed in right now they stay signed in until they log out.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="reset-submit"><i class="fa fa-key" aria-hidden="true"></i> Set new password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Remove student -->
+<div class="modal fade" id="modal-remove" tabindex="-1" aria-labelledby="modal-remove-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5" id="modal-remove-title">Remove student?</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="remove-text"></p>
+        <p id="remove-files"><strong>Their files are not deleted</strong> — they are moved to an archive you can download later from
+          Backups → Archived students. If their JupyterLab is running it is stopped first.</p>
+        <details class="cc-details">
+          <summary>More options for their files</summary>
+          <div class="form-check mt-2">
+            <input class="form-check-input" type="radio" name="remove_home" id="remove-archive" value="archive" checked>
+            <label class="form-check-label" for="remove-archive">Archive the files (recommended)</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="remove_home" id="remove-keep" value="keep">
+            <label class="form-check-label" for="remove-keep">Keep the home folder on the server as it is</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="remove_home" id="remove-delete" value="delete">
+            <label class="form-check-label" for="remove-delete">Delete the files permanently (cannot be undone)</label>
+          </div>
+        </details>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="remove-cancel">Cancel</button>
+        <button type="button" class="btn btn-danger" id="remove-submit" data-submit><i class="fa fa-user-minus" aria-hidden="true"></i> Remove student</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{{ prefix }}/static/students.js?v={{ asset_version }}"></script>{% endblock %}

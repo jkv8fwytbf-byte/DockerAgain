@@ -1,0 +1,55 @@
+/* Students page — layered on console.css tokens (light + dark via --cc-*). */
+.cc-col-check { width: 2.25rem; }
+.cc-selection { display: inline-flex; align-items: center; gap: .5rem; font-size: .875rem; flex-wrap: wrap; }
+.cc-empty-search { padding: var(--cc-s5); text-align: center; color: var(--cc-muted); }
+.cc-table td { vertical-align: middle; }
+.cc-table tr.is-leaving { transition: opacity .3s ease; opacity: 0; }
+.cc-table tr.is-muted td > *:not(.cc-result) { opacity: .6; }
+.cc-warn-icon { color: var(--cc-pend-dot); margin-left: .25rem; cursor: help; }
+.cc-pw { user-select: all; }
+.cc-name { font-weight: 600; }
+/* usernames/passwords are data, not source code: keep the body colour, not Bootstrap's pink */
+#students-table code, #bulk-preview code { color: inherit; }
+.dropdown-item:disabled { pointer-events: auto; cursor: not-allowed; }
+/* Bootstrap's .text-danger is !important and would keep a disabled "Remove student" looking clickable */
+.dropdown-item.text-danger:disabled { color: var(--bs-dropdown-link-disabled-color) !important; }
+.cc-page-actions .cc-icon-btn { width: 2.375rem; }
+
+/* field feedback */
+.cc-field-status { font-size: .8125rem; margin-top: .25rem; min-height: 1.2em; }
+.cc-field-status.is-ok { color: var(--cc-run-fg); }
+.cc-field-status.is-bad { color: var(--cc-fail-fg); }
+.cc-field-error { font-size: .8125rem; color: var(--cc-fail-fg); margin-top: .25rem; }
+.form-control.is-invalid { border-color: var(--cc-fail-dot); }
+
+/* bulk add */
+.cc-steps { display: flex; gap: 1rem; list-style: none; margin: 0 0 0 auto; padding: 0 1rem 0 0; font-size: .8125rem; color: var(--cc-muted); }
+.cc-steps li { display: inline-flex; align-items: center; gap: .35rem; white-space: nowrap; }
+.cc-steps__n { display: inline-flex; width: 1.35rem; height: 1.35rem; border-radius: 50%; align-items: center; justify-content: center; border: 1px solid var(--cc-border); font-size: .75rem; }
+.cc-steps li.is-active { color: var(--cc-text); font-weight: 600; }
+.cc-steps li.is-active .cc-steps__n { background: var(--cc-accent); border-color: var(--cc-accent); color: #fff; }
+.cc-steps li.is-done { color: var(--cc-run-fg); }
+.cc-steps li.is-done .cc-steps__n { background: var(--cc-run-bg); border-color: var(--cc-run-dot); color: var(--cc-run-fg); }
+.cc-or { display: flex; align-items: center; gap: .75rem; margin: 1rem 0; color: var(--cc-muted); font-size: .8125rem; }
+.cc-or::before, .cc-or::after { content: ""; flex: 1; border-top: 1px solid var(--cc-border); }
+.cc-chips { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .75rem; }
+.cc-chip { padding: .2rem .65rem; border-radius: var(--cc-r-pill); font-size: .8125rem; font-weight: 500; background: var(--cc-stop-bg); color: var(--cc-stop-fg); }
+.cc-chip--new { background: var(--cc-run-bg); color: var(--cc-run-fg); }
+.cc-chip--fix { background: var(--cc-fail-bg); color: var(--cc-fail-fg); }
+.cc-table-wrap--modal { max-height: 45vh; }
+.cc-result { font-size: .875rem; }
+.cc-result--new { color: var(--cc-run-fg); font-weight: 500; }
+.cc-result--exists { color: var(--cc-muted); }
+.cc-result--invalid { color: var(--cc-fail-fg); }
+#bulk-preview input.form-control-sm { min-width: 7rem; }
+#bulk-preview tr.is-invalid-row td { background: color-mix(in srgb, var(--cc-fail-bg) 45%, transparent); }
+.cc-done-icon { font-size: 40px; color: var(--cc-run-dot); }
+
+@media (max-width: 767.98px) {
+  #students-table td[data-key="name"] { white-space: nowrap; }   /* the table scrolls sideways; names stay readable */
+}
+@media (max-width: 575px) {
+  .cc-steps { display: none; }
+  .cc-selection { margin-left: 0 !important; }
+}
+@media (prefers-reduced-motion: reduce) { .cc-table tr.is-leaving { transition: none; } }

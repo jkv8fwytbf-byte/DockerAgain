@@ -1,0 +1,28 @@
+/* Backups page */
+.cc-disk-note { display: flex; gap: var(--cc-s3); align-items: flex-start; margin-bottom: var(--cc-s5); }
+.cc-disk-note__icon { font-size: 1.25rem; margin-top: .1rem; flex: 0 0 auto; }
+.cc-card__hint { font-size: .8125rem; flex-basis: 100%; }
+.cc-loading { padding: var(--cc-s4) 0; }
+.cc-progress-card { border-left: 4px solid var(--cc-accent); }
+.cc-progress-card:focus { outline: 2px solid var(--cc-accent); outline-offset: 2px; }
+.cc-progress-card:focus:not(:focus-visible) { outline: none; }
+.cc-note { display: flex; gap: var(--cc-s3); align-items: flex-start; }
+.cc-note > .fa { margin-top: .2rem; flex: 0 0 auto; }
+.cc-note__list { margin: var(--cc-s2) 0 0; padding-left: 1.25rem; }
+.cc-note__list li { overflow-wrap: anywhere; }
+.cc-note details { margin-top: var(--cc-s2); }
+.cc-note summary { cursor: pointer; }
+.cc-progress-card__head { display: flex; align-items: center; gap: var(--cc-s2); flex-wrap: wrap; margin-bottom: var(--cc-s3); }
+.cc-progress-card__icon { color: var(--cc-accent); }
+.cc-progress-card .progress { height: .5rem; margin-bottom: var(--cc-s2); }
+.cc-progress-card .progress-bar { transition: width .6s ease; }
+.cc-table td.cc-actions { text-align: right; white-space: nowrap; }
+.cc-table th.cc-actions-col { width: 1%; }
+.cc-empty-search { padding: var(--cc-s4) 0 0; text-align: center; }
+.cc-table td code.small { font-size: .75rem; }
+@media (max-width: 767.98px) {
+  /* narrow screens: one line per row, the table wrap scrolls sideways */
+  #bk-table td, #bk-table th, #ar-table td, #ar-table th { white-space: nowrap; }
+  .cc-table td code.small { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .cc-progress-card .progress-bar { transition: none; animation: none; } }

@@ -1,8 +1,126 @@
 {% extends "base.html" %}
-{% block content %}
-<section class="cc-card cc-empty">
-  <i class="fa fa-screwdriver-wrench cc-empty__icon" aria-hidden="true"></i>
-  <h2 class="cc-empty__title">Coming soon</h2>
-  <p class="cc-empty__text">Backups will appear here once the backups feature is installed.</p>
-</section>
+{% block head %}<link rel="stylesheet" href="{{ prefix }}/static/backups.css?v={{ asset_version }}">{% endblock %}
+
+{% block actions %}
+<button id="bk-create" class="btn btn-primary" type="button" disabled>
+  <i class="fa fa-plus" aria-hidden="true"></i> Create backup now
+</button>
 {% endblock %}
+
+{% block content %}
+<div id="bk-error" class="cc-empty cc-card" hidden>
+  <i class="fa fa-plug-circle-xmark cc-empty__icon" aria-hidden="true"></i>
+  <h2 class="cc-empty__title">Could not load the backups</h2>
+  <p class="cc-empty__text" id="bk-error-text"></p>
+  <div class="cc-empty__actions"><button id="bk-retry" class="btn btn-primary" type="button">Try again</button></div>
+</div>
+
+<div id="bk-disk" class="alert alert-info cc-disk-note" role="status" hidden>
+  <i class="fa fa-hard-drive cc-disk-note__icon" aria-hidden="true"></i>
+  <div>
+    <span id="bk-disk-text"></span>
+    <span id="bk-disk-tip">Download important backups to a USB stick or another computer: a backup that only lives on this server is lost with it.</span>
+  </div>
+</div>
+
+<div id="bk-failed" class="alert alert-danger cc-inline-alert" role="alert" hidden>
+  <i class="fa fa-triangle-exclamation" aria-hidden="true"></i>
+  <strong>The last backup did not finish.</strong>
+  <span id="bk-failed-text"></span>
+  Try again; if it keeps failing, the Logs page has the details.
+</div>
+
+<div id="bk-note" class="alert alert-warning cc-inline-alert cc-note" role="status" hidden>
+  <i class="fa fa-circle-info" aria-hidden="true"></i>
+  <div>
+    <strong id="bk-note-title">The last backup left some things out.</strong>
+    <span id="bk-note-text"></span>
+    <ul id="bk-note-warnings" class="cc-note__list" hidden></ul>
+    <details id="bk-note-details" hidden>
+      <summary>What was left out</summary>
+      <ul id="bk-note-items" class="cc-note__list cc-mono"></ul>
+      <p id="bk-note-more" class="cc-muted small mb-0" hidden></p>
+    </details>
+  </div>
+</div>
+
+<div id="bk-announce" class="visually-hidden" aria-live="polite"></div>
+
+<section id="bk-progress" class="cc-card cc-progress-card" tabindex="-1" hidden>
+  <div class="cc-progress-card__head">
+    <i class="fa fa-spinner fa-spin cc-progress-card__icon" aria-hidden="true"></i>
+    <strong>Creating backup…</strong>
+    <span id="bk-progress-text" class="cc-muted">Starting</span>
+  </div>
+  <div id="bk-progress-bar" class="progress" role="progressbar" aria-label="Backup progress" aria-valuemin="0" aria-valuemax="100" aria-valuetext="working">
+    <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+  </div>
+  <small class="cc-muted">This can take a few minutes for a large class. You can leave this page — the backup keeps running and appears in the list when it is done.</small>
+</section>
+
+<section id="bk-section" class="cc-card" aria-labelledby="bk-title">
+  <div class="cc-card__header">
+    <h2 id="bk-title" tabindex="-1">Backups <span class="cc-count" id="bk-count"></span></h2>
+    <span class="cc-muted cc-card__hint">Each backup holds every student's home folder, the shared handouts, your settings and the class roster (with passwords).</span>
+  </div>
+  <div id="bk-loading" class="cc-loading cc-muted"><i class="fa fa-spinner fa-spin" aria-hidden="true"></i> Loading…</div>
+  <div class="cc-table-wrap" id="bk-table-wrap" hidden>
+    <table id="bk-table" class="table cc-table" data-sort-key="created" data-sort-dir="desc">
+      <thead>
+        <tr>
+          <th scope="col" data-sort="name"><button type="button" class="cc-sort">Name</button></th>
+          <th scope="col" data-sort="created"><button type="button" class="cc-sort">Created</button></th>
+          <th scope="col" class="num" data-sort="size"><button type="button" class="cc-sort">Size</button></th>
+          <th scope="col" class="cc-actions-col"><span class="visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div id="bk-empty" class="cc-empty" hidden>
+    <i class="fa fa-box-archive cc-empty__icon" aria-hidden="true"></i>
+    <h3 class="cc-empty__title">No backups yet</h3>
+    <p class="cc-empty__text">Make one before big changes and at the end of each term.</p>
+    <div class="cc-empty__actions">
+      <button id="bk-create-empty" class="btn btn-primary" type="button"><i class="fa fa-plus" aria-hidden="true"></i> Create backup now</button>
+    </div>
+  </div>
+</section>
+
+<section id="ar-section" class="cc-card" aria-labelledby="ar-title">
+  <div class="cc-card__header">
+    <h2 id="ar-title" tabindex="-1">Archived students <span class="cc-count" id="ar-count"></span></h2>
+    <span class="cc-muted cc-card__hint">Files of students you removed. Each archive is that student's whole home folder at the moment they were removed.</span>
+  </div>
+  <div class="cc-toolbar" id="ar-toolbar" hidden>
+    <label class="visually-hidden" for="ar-search">Search archived students</label>
+    <input id="ar-search" class="form-control cc-search" type="search" placeholder="Search by username" data-search-for="ar-table" autocomplete="off">
+  </div>
+  <div id="ar-loading" class="cc-loading cc-muted"><i class="fa fa-spinner fa-spin" aria-hidden="true"></i> Loading…</div>
+  <div class="cc-table-wrap" id="ar-table-wrap" hidden>
+    <table id="ar-table" class="table cc-table" data-sort-key="removed" data-sort-dir="desc">
+      <thead>
+        <tr>
+          <th scope="col" data-sort="username"><button type="button" class="cc-sort">Student</button></th>
+          <th scope="col" data-sort="removed"><button type="button" class="cc-sort">Removed</button></th>
+          <th scope="col" class="num" data-sort="size"><button type="button" class="cc-sort">Size</button></th>
+          <th scope="col" class="cc-actions-col"><span class="visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <p class="cc-muted cc-empty-search" data-empty-search hidden>No archived students match your search.</p>
+  </div>
+  <div id="ar-empty" class="cc-empty" hidden>
+    <i class="fa fa-user-clock cc-empty__icon" aria-hidden="true"></i>
+    <h3 class="cc-empty__title">Nothing archived</h3>
+    <p class="cc-empty__text">When you remove a student their files appear here, ready to download or delete.</p>
+    <div class="cc-empty__actions">
+      <a class="btn btn-outline-secondary" href="{{ prefix }}/students"><i class="fa fa-user-graduate" aria-hidden="true"></i> Go to Students</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}<script src="{{ prefix }}/static/backups.js?v={{ asset_version }}"></script>{% endblock %}

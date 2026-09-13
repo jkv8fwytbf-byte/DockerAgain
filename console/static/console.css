@@ -40,8 +40,9 @@ body.cc-shell { margin: 0; background: var(--cc-page-bg); color: var(--cc-text);
 .cc-skip { position: absolute; left: -999px; top: 0; background: var(--cc-surface); padding: .5rem 1rem; z-index: 2000; border-radius: 0 0 var(--cc-r-control) 0; }
 .cc-skip:focus { left: 0; box-shadow: var(--cc-focus); }
 .cc-topbar { position: sticky; top: 0; z-index: 1030; height: var(--cc-topbar-h); display: flex; align-items: center; gap: var(--cc-s3); padding: 0 var(--cc-s4); background: var(--cc-nav-bg); border-bottom: 1px solid var(--cc-border); }
+.cc-topbar > .btn, .cc-topbar > form { flex-shrink: 0; white-space: nowrap; }
 .cc-brand { display: flex; align-items: center; gap: var(--cc-s2); text-decoration: none; color: var(--cc-text); min-width: 0; }
-.cc-brand__logo { height: 28px; width: auto; }
+.cc-brand__logo { height: 28px; width: auto; max-width: 144px; object-fit: contain; }
 [data-bs-theme=dark] .cc-brand__logo { background: #fff; border-radius: 4px; padding: 1px 4px; }
 .cc-brand__name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cc-brand__suffix { color: var(--cc-muted); font-size: .875rem; white-space: nowrap; }
@@ -75,6 +76,7 @@ body.cc-shell { margin: 0; background: var(--cc-page-bg); color: var(--cc-text);
 .cc-page-actions { display: flex; gap: var(--cc-s2); flex-wrap: wrap; }
 
 @media (min-width: 768px) and (max-width: 1099px) {
+  .cc-brand__suffix, .cc-username { display: none; }
   .cc-sidebar { width: var(--cc-rail-w); }
   .cc-nav__label, .cc-nav__badge, .cc-sidebar__version { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .cc-nav__link { justify-content: center; padding: .6rem 0; }
@@ -86,6 +88,11 @@ body.cc-shell { margin: 0; background: var(--cc-page-bg); color: var(--cc-text);
   .cc-sidebar { position: fixed; height: 100%; top: 0; width: var(--cc-sidebar-w); }
   .cc-main { padding: var(--cc-s4); }
   .cc-brand__suffix, .cc-username, .cc-topbar__link { display: none; }
+  .cc-topbar { gap: var(--cc-s2); padding: 0 var(--cc-s3); }
+  .cc-brand { flex: 1; }
+  .cc-brand__logo { width: 64px; height: 24px; object-fit: contain; flex-shrink: 0; }
+  .cc-brand__name { font-size: .875rem; }
+  .cc-avatar, .cc-topbar__spacer { display: none; }
 }
 
 /* --- cards, tables, stats ------------------------------------------------ */
@@ -162,7 +169,7 @@ tr:hover .cc-copy, tr:focus-within .cc-copy, .cc-copy:focus, .cc-copy.is-visible
 .cc-sticky-footer { position: sticky; bottom: 0; background: var(--cc-surface); border-top: 1px solid var(--cc-border); padding: var(--cc-s3) var(--cc-s4); display: flex; gap: var(--cc-s2); align-items: center; justify-content: flex-end; margin: 0 calc(-1 * var(--cc-gutter)); z-index: 5; }
 .cc-swatches { display: flex; gap: .5rem; flex-wrap: wrap; }
 .cc-swatch { width: 2rem; height: 2rem; border-radius: 50%; border: 3px solid transparent; cursor: pointer; }
-.cc-swatch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.cc-swatch input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 1; }
 .cc-swatch.is-selected, .cc-swatch:has(input:checked) { border-color: var(--cc-text); box-shadow: 0 0 0 2px var(--cc-surface) inset; }
 .cc-swatch:has(input:focus-visible) { box-shadow: var(--cc-focus); }
 

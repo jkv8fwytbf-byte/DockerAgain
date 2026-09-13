@@ -99,7 +99,7 @@
       const q = state.q.toLowerCase();
       rows.forEach((tr) => { tr.hidden = q && !tr.dataset.search.toLowerCase().includes(q); });
       if (state.key) {
-        const sorted = rows.slice().sort((a, b) => { const x = val(a, state.key), y = val(b, state.key); const n = parseFloat(x), m = parseFloat(y); const c = (!isNaN(n) && !isNaN(m)) ? n - m : x.localeCompare(y, undefined, { numeric: true, sensitivity: "base" }); return state.dir === "asc" ? c : -c; });
+        const sorted = rows.slice().sort((a, b) => { const x = val(a, state.key), y = val(b, state.key); const n = Number(x), m = Number(y); const c = (x.trim() && y.trim() && Number.isFinite(n) && Number.isFinite(m)) ? n - m : x.localeCompare(y, undefined, { numeric: true, sensitivity: "base" }); return state.dir === "asc" ? c : -c; });
         sorted.forEach((tr) => tbody.appendChild(tr));
       }
       table.querySelectorAll("th[data-sort]").forEach((th) => th.setAttribute("aria-sort", th.dataset.sort === state.key ? (state.dir === "asc" ? "ascending" : "descending") : "none"));

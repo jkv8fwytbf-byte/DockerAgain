@@ -1,8 +1,100 @@
 {% extends "base.html" %}
+{% block head %}<link rel="stylesheet" href="{{ prefix }}/static/dashboard.css?v={{ asset_version }}">{% endblock %}
+
+{% block actions %}
+<span id="stop-all-wrap" class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="No servers are running">
+  <button id="stop-all" class="btn btn-outline-danger disabled" type="button" aria-disabled="true" tabindex="-1" data-count="0">
+    <i class="fa fa-stop" aria-hidden="true"></i> Stop all servers
+  </button>
+</span>
+{% endblock %}
+
 {% block content %}
-<section class="cc-card cc-empty">
-  <i class="fa fa-screwdriver-wrench cc-empty__icon" aria-hidden="true"></i>
-  <h2 class="cc-empty__title">Coming soon</h2>
-  <p class="cc-empty__text">Live status will appear here once the dashboard feature is installed.</p>
+<div id="dash-offline" class="alert alert-warning alert-dismissible cc-inline-alert" role="alert" hidden>
+  <i class="fa fa-triangle-exclamation" aria-hidden="true"></i>
+  <strong>Can't reach the console right now.</strong> Trying again… The numbers below are from
+  <time id="dash-offline-since" datetime="">a moment ago</time>.
+  <span id="dash-offline-detail" class="d-block small cc-muted mt-1"></span>
+  <button type="button" class="btn-close" aria-label="Hide this message" data-dismiss-offline></button>
+</div>
+<div id="dash-hub" class="alert alert-warning cc-inline-alert" role="alert" hidden>
+  <i class="fa fa-triangle-exclamation" aria-hidden="true"></i>
+  <strong>JupyterHub is not answering.</strong> Students cannot sign in until it is back. The list below comes from
+  the roster, so server status is unknown and Start / Stop are paused.
+  <span id="dash-hub-detail" class="d-block small cc-muted mt-1"></span>
+</div>
+
+<section class="cc-stats" aria-label="Server health">
+  <article class="cc-stat cc-stat--plain">
+    <i class="fa fa-users cc-stat__icon" aria-hidden="true"></i>
+    <span class="cc-stat__label">Students online</span>
+    <span class="cc-stat__value" id="stat-online">—</span>
+    <span class="cc-stat__sub" id="stat-online-sub">of — accounts</span>
+  </article>
+  <article class="cc-stat">
+    <i class="fa fa-microchip cc-stat__icon" aria-hidden="true"></i>
+    <span class="cc-stat__label">CPU</span>
+    <span class="cc-stat__value" id="stat-cpu">—</span>
+    <span class="cc-stat__sub" id="stat-cpu-sub">whole machine</span>
+    <span class="cc-meter" role="meter" aria-label="CPU usage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="meter-cpu"><span style="width:0%"></span></span>
+  </article>
+  <article class="cc-stat">
+    <i class="fa fa-memory cc-stat__icon" aria-hidden="true"></i>
+    <span class="cc-stat__label">Memory</span>
+    <span class="cc-stat__value" id="stat-mem">—</span>
+    <span class="cc-stat__sub" id="stat-mem-sub">of —</span>
+    <span class="cc-meter" role="meter" aria-label="Memory usage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="meter-mem"><span style="width:0%"></span></span>
+  </article>
+  <article class="cc-stat">
+    <i class="fa fa-hard-drive cc-stat__icon" aria-hidden="true"></i>
+    <span class="cc-stat__label">Disk (student files)</span>
+    <span class="cc-stat__value" id="stat-disk">—</span>
+    <span class="cc-stat__sub" id="stat-disk-sub">free of —</span>
+    <span class="cc-meter" role="meter" aria-label="Disk usage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="meter-disk"><span style="width:0%"></span></span>
+  </article>
+</section>
+
+<section class="cc-card" id="dash-card" aria-labelledby="dash-heading">
+  <header class="cc-card__header">
+    <h2 id="dash-heading">Students <span class="cc-count" id="dash-count"></span></h2>
+    <label class="visually-hidden" for="dash-search">Search students</label>
+    <input id="dash-search" type="search" class="form-control form-control-sm cc-search ms-md-auto"
+           placeholder="Search students" autocomplete="off" data-search-for="dashboard-table">
+  </header>
+
+  <div class="cc-table-wrap" id="dash-table-wrap">
+    <table class="table cc-table" id="dashboard-table" data-sort-key="name" data-sort-dir="asc">
+      <thead>
+        <tr>
+          <th scope="col" data-sort="name"><button type="button" class="cc-sort">Name</button></th>
+          <th scope="col" data-sort="state"><button type="button" class="cc-sort">Status</button></th>
+          <th scope="col" data-sort="activity"><button type="button" class="cc-sort">Last activity</button></th>
+          <th scope="col" class="num" data-sort="cpu"><button type="button" class="cc-sort">CPU</button></th>
+          <th scope="col" class="num" data-sort="mem"><button type="button" class="cc-sort">Memory</button></th>
+          <th scope="col" class="text-end"><span class="visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody id="dash-rows">
+        <tr id="dash-loading" class="cc-loading"><td colspan="6" class="cc-muted"><i class="fa fa-spinner fa-spin" aria-hidden="true"></i> Loading the class…</td></tr>
+      </tbody>
+    </table>
+    <p class="cc-muted p-3 mb-0" data-empty-search hidden>No students match your search.</p>
+  </div>
+
+  <div id="dash-empty" class="cc-empty" hidden>
+    <i class="fa fa-user-graduate cc-empty__icon" aria-hidden="true"></i>
+    <h3 class="cc-empty__title">No students yet</h3>
+    <p class="cc-empty__text">Add students to get started. Each one gets a private JupyterLab.</p>
+    <div class="cc-empty__actions">
+      <a class="btn btn-primary" href="{{ prefix }}/students?add=1"><i class="fa fa-user-plus" aria-hidden="true"></i> Add student</a>
+    </div>
+  </div>
+
+  <footer class="cc-card__footer">
+    <small>Updates every 5 seconds. CPU and memory are per student; the tiles above are for the whole machine.
+      <span id="dash-versions"></span></small>
+  </footer>
 </section>
 {% endblock %}
+
+{% block scripts %}<script src="{{ prefix }}/static/dashboard.js?v={{ asset_version }}"></script>{% endblock %}

@@ -6,7 +6,7 @@
   <title>{{ title }} · Teacher console</title>
   <link rel="icon" href="{{ hub_static }}/favicon.ico">
   <link rel="stylesheet" href="{{ hub_static }}/css/style.min.css">
-  <link rel="stylesheet" href="{{ prefix }}/static/console.css">
+  <link rel="stylesheet" href="{{ prefix }}/static/console.css?v={{ asset_version }}">
   {% block head %}{% endblock %}
   <script src="{{ hub_static }}/js/darkmode.js"></script>
   <meta name="console-prefix" content="{{ prefix }}">
@@ -108,7 +108,7 @@
 </div>
 
 <script src="{{ hub_static }}/components/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{{ prefix }}/static/console.js"></script>
+<script src="{{ prefix }}/static/console.js?v={{ asset_version }}"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
