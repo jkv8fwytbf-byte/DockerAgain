@@ -84,6 +84,23 @@ def main():
             "every role refers to a defined service",
         )
         check(not scopes_ok(roles), f"role scopes exist ({scopes_ok(roles) or 'all good'})")
+        # Exercise the real spawner: its default env_keep includes PYTHONPATH.
+        # Setting only PATH in Spawner.environment does not remove inherited values.
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from jupyterhub.objects import Hub
+        from jupyterhub.spawner import LocalProcessSpawner
+
+        with patch.dict(os.environ, {"PYTHONPATH": "/opt/classroom"}):
+            spawner = LocalProcessSpawner(
+                config=cfg,
+                user=SimpleNamespace(name="root", url="/user/root/"),
+                hub=Hub(),
+            )
+            check(
+                "/opt/classroom" not in spawner.get_env().get("PYTHONPATH", "").split(os.pathsep),
+                "student servers do not inherit the console Python path",
+            )
         if env["CONSOLE_ENABLED"] == "1":
             console = next((s for s in services if s["name"] == "console"), None)
             check(console is not None, "console service declared")

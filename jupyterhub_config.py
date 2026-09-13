@@ -133,6 +133,9 @@ c.Spawner.default_url = "/lab"                   # open JupyterLab, not the clas
 c.Spawner.notebook_dir = "~"                     # each student sees their own home
 c.Spawner.environment = {
     "PATH": os.environ.get("PATH", "/opt/conda/bin:/usr/local/bin:/usr/bin:/bin"),
+    # LocalProcessSpawner keeps PYTHONPATH by default. The Hub needs the console
+    # package on its path, but student servers and their kernels must not inherit it.
+    "PYTHONPATH": "",
 }
 c.Spawner.start_timeout = 120
 c.Spawner.http_timeout = 60

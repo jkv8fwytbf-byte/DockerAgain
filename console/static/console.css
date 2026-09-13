@@ -76,7 +76,7 @@ body.cc-shell { margin: 0; background: var(--cc-page-bg); color: var(--cc-text);
 .cc-page-actions { display: flex; gap: var(--cc-s2); flex-wrap: wrap; }
 
 @media (min-width: 768px) and (max-width: 1099px) {
-  .cc-brand__suffix, .cc-username { display: none; }
+  .cc-brand__suffix, .cc-topbar > .cc-username { display: none; }
   .cc-sidebar { width: var(--cc-rail-w); }
   .cc-nav__label, .cc-nav__badge, .cc-sidebar__version { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .cc-nav__link { justify-content: center; padding: .6rem 0; }
@@ -87,7 +87,7 @@ body.cc-shell { margin: 0; background: var(--cc-page-bg); color: var(--cc-text);
 @media (max-width: 767.98px) {
   .cc-sidebar { position: fixed; height: 100%; top: 0; width: var(--cc-sidebar-w); }
   .cc-main { padding: var(--cc-s4); }
-  .cc-brand__suffix, .cc-username, .cc-topbar__link { display: none; }
+  .cc-brand__suffix, .cc-topbar > .cc-username, .cc-topbar__link { display: none; }
   .cc-topbar { gap: var(--cc-s2); padding: 0 var(--cc-s3); }
   .cc-brand { flex: 1; }
   .cc-brand__logo { width: 64px; height: 24px; object-fit: contain; flex-shrink: 0; }
