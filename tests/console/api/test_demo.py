@@ -81,6 +81,7 @@ def test_seeded_class_and_handouts(client):
     shared = Path(settings.shared_dir)
     for name in HANDOUT_FILES:
         assert (shared / name).is_file(), name
+    assert not (shared / "build.py").exists()
     assert (Path(settings.home_root) / "priya" / "submit" / "hello-from-priya.txt").is_file()
     assert (Path(settings.home_root) / "priya" / "Welcome.ipynb").is_file()
     assert list(Path(settings.removed_dir).glob("maya-*.tar.gz"))

@@ -68,12 +68,15 @@ def copy_handouts(shared_dir: str) -> list[str]:
     dest.mkdir(parents=True, exist_ok=True)
     copied = []
     for src in sorted(HANDOUTS.iterdir()):
-        if src.name.startswith("_") or src.name.startswith("."):
+        if (
+            not src.is_file()
+            or src.name.startswith(("_", "."))
+            or src.suffix not in {".ipynb", ".md", ".csv"}
+        ):
             continue
         target = dest / src.name
-        if src.is_file():
-            shutil.copyfile(src, target)
-            copied.append(src.name)
+        shutil.copyfile(src, target)
+        copied.append(src.name)
     return copied
 
 

@@ -18,7 +18,7 @@ The seeded class is **Lincoln High School**, Grade 10 · Python & Radio Lab. Eve
 
 This process uses the project's test doubles (`FakeHub`, `FakeSystem`). No Linux accounts are created. Opening a student workspace lists that student's home files; notebook kernels run only inside the Docker image (`make up`).
 
-Regenerate the lesson notebooks after editing `handouts/build.py`:
+Only `.ipynb`, `.md`, and `.csv` files are copied into each student's `~/shared`. `handouts/build.py` stays in the repo as a regenerator:
 
 ```bash
 .venv/bin/python demo/handouts/build.py
