@@ -7,7 +7,6 @@ from __future__ import annotations
 import json
 import os
 import sys
-from urllib.parse import parse_qs
 
 import httpx
 import pytest
@@ -17,7 +16,7 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tests", "console"))
 
-from fakes import FakeSystem  # noqa: E402
+from fakes import DEFAULT_HUB_TOKEN, FakeHub, FakeSystem  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from console.accounts import AccountSettings, Accounts  # noqa: E402
@@ -26,93 +25,7 @@ from console.auth import CSRF_HEADER, SESSION_COOKIE  # noqa: E402
 from console.hub_api import HubClient  # noqa: E402
 from console.settings import Settings  # noqa: E402
 
-SERVICE_TOKEN = "service-token-xyz"
-
-
-class FakeHub:
-    """In-memory JupyterHub API: users, servers, OAuth code exchange."""
-
-    def __init__(self):
-        self.users: dict[str, dict] = {}
-        self.codes: dict[str, str] = {}          # code -> username
-        self.tokens: dict[str, str] = {}         # access token -> username
-        self.calls: list[tuple[str, str]] = []
-        self.down = False
-        self.pending_stop: set[str] = set()
-
-    def add(self, name: str, admin: bool = False, running: bool = False):
-        self.users[name] = {
-            "kind": "user", "name": name, "admin": admin, "groups": [], "roles": ["admin" if admin else "user"],
-            "server": f"/user/{name}/" if running else None, "pending": None, "last_activity": None,
-            "servers": {"": {"name": "", "ready": running, "pending": None, "stopped": not running,
-                              "started": None, "last_activity": None, "url": f"/user/{name}/"}},
-        }
-
-    def handler(self, request: httpx.Request) -> httpx.Response:
-        self.calls.append((request.method, request.url.path))
-        if self.down:
-            raise httpx.ConnectError("hub down")
-        path = request.url.path.replace("/hub/api", "", 1)
-        auth = request.headers.get("Authorization", "")
-        if path == "/oauth2/token" and request.method == "POST":
-            form = parse_qs(request.content.decode())
-            if form.get("client_secret", [""])[0] != SERVICE_TOKEN or form.get("grant_type") != ["authorization_code"]:
-                return httpx.Response(400, json={"message": "bad client"})
-            code = form.get("code", [""])[0]
-            if code not in self.codes:
-                return httpx.Response(400, json={"message": "invalid code"})
-            token = f"tok-{code}"
-            self.tokens[token] = self.codes.pop(code)
-            return httpx.Response(200, json={"access_token": token, "token_type": "Bearer"})
-        if path == "/user":
-            name = self.tokens.get(auth.replace("token ", ""))
-            if not name:
-                return httpx.Response(403, json={"message": "invalid token"})
-            return httpx.Response(200, json=dict(self.users[name], scopes=["identify"]))
-        if auth != f"token {SERVICE_TOKEN}":
-            return httpx.Response(403, json={"message": "service token required"})
-        if path == "/users" and request.method == "GET":
-            items = list(self.users.values())
-            offset = int(request.url.params.get("offset", 0)); limit = int(request.url.params.get("limit", 50))
-            page = items[offset:offset + limit]
-            nxt = {"offset": offset + limit, "limit": limit} if offset + limit < len(items) else None
-            return httpx.Response(200, json={"items": page, "_pagination": {"offset": offset, "limit": limit, "total": len(items), "next": nxt}})
-        if path.startswith("/users/"):
-            parts = path.split("/")[2:]
-            name = parts[0]
-            if len(parts) == 1:
-                if request.method == "GET":
-                    return httpx.Response(200, json=self.users[name]) if name in self.users else httpx.Response(404, json={"message": "not found"})
-                if request.method == "POST":
-                    if name in self.users:
-                        return httpx.Response(409, json={"message": "exists"})
-                    self.add(name)
-                    return httpx.Response(201, json=self.users[name])
-                if request.method == "DELETE":
-                    if name not in self.users:
-                        return httpx.Response(404, json={"message": "not found"})
-                    if name in self.pending_stop:
-                        self.pending_stop.discard(name)
-                        return httpx.Response(400, json={"message": f"{name}'s server is in the process of stopping, please wait."})
-                    del self.users[name]
-                    return httpx.Response(204)
-            if len(parts) == 2 and parts[1] == "server":
-                if name not in self.users:
-                    return httpx.Response(404, json={"message": "not found"})
-                u = self.users[name]
-                if request.method == "POST":
-                    if u["server"]:
-                        return httpx.Response(400, json={"message": f"{name} is already running"})
-                    u["server"] = f"/user/{name}/"; u["servers"][""].update(ready=True, stopped=False)
-                    return httpx.Response(201)
-                if request.method == "DELETE":
-                    if not u["server"]:
-                        return httpx.Response(400, json={"message": f"{name} is not running"})
-                    u["server"] = None; u["servers"][""].update(ready=False, stopped=True)
-                    return httpx.Response(204)
-        if path == "/info":
-            return httpx.Response(200, json={"version": "5.3.0"})
-        return httpx.Response(404, json={"message": f"no route {path}"})
+SERVICE_TOKEN = DEFAULT_HUB_TOKEN
 
 
 @pytest.fixture

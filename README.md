@@ -334,3 +334,14 @@ shared-file permissions and existing home ownership were verified in the contain
 Stopping and recreating the container preserved all 21 account IDs, the roster,
 branding and welcome-kit markers.
 The x86 library checks in section 8 still need to run on the classroom server.
+
+## 14. Complete demo (no Docker)
+
+A seeded Lincoln High School class — branded sign-in, every Teacher console page, login cards, and sample lesson notebooks — without building the 10 GB image. It uses the same FakeHub / FakeSystem doubles as `make test-unit`, so no Linux accounts are created on this computer.
+
+```bash
+make venv
+make demo
+```
+
+Open <http://127.0.0.1:8099>. Sign in as `priya` / `coral-otter-12`, or open the teacher console (already signed in as `teacher`). Handouts live in `demo/handouts/` and are copied into every student's `shared/` folder. Full JupyterLab kernels still need the classroom image (`make up`).

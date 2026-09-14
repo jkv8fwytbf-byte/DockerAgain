@@ -3,7 +3,7 @@ IMAGE    ?= classroom-jupyterhub
 TAG      ?= dev
 PLATFORM ?= linux/amd64
 
-.PHONY: help build build-server up down restart logs test shell export venv test-unit test-api check-config test-integration test-all console-logs
+.PHONY: help build build-server up down restart logs test shell export venv test-unit test-api check-config test-integration test-all console-logs demo
 
 help:
 	@echo "make build         build the image for THIS machine (fast, for local testing)"
@@ -20,6 +20,7 @@ help:
 	@echo "make test-integration  end-to-end console check inside the container (login, add, remove)"
 	@echo "make test-all          check-config + test-api + test-integration + smoke test"
 	@echo "make console-logs      follow the teacher console log"
+	@echo "make demo          Docker-free complete demo (console + sign-in) at http://127.0.0.1:8099"
 
 build:
 	docker build --build-arg VERSION=$(TAG) -t $(IMAGE):$(TAG) .
@@ -69,3 +70,8 @@ test-all: check-config test-api test-integration test
 
 console-logs:
 	docker compose exec jupyterhub tail -f /srv/jupyterhub/logs/console.log
+
+demo:
+	@test -x .venv/bin/python || $(MAKE) venv
+	.venv/bin/python -c "import jupyterhub" >/dev/null 2>&1 || .venv/bin/pip install -q 'jupyterhub>=5.3,<6'
+	.venv/bin/python -m demo
